@@ -19,6 +19,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/a2aproject/a2a-go/a2asrv"
 	"github.com/google/uuid"
 	"google.golang.org/adk/agent"
 	"google.golang.org/adk/agent/llmagent"
@@ -45,6 +46,18 @@ func saveReportfunc(ctx agent.CallbackContext, llmResponse *model.LLMResponse, l
 		}
 	}
 	return llmResponse, llmResponseError
+}
+
+// needed to use 'user' for both a2a and webui (which are sharing the same sessions service)
+type AuthInterceptor struct {
+	a2asrv.PassthroughCallInterceptor
+}
+
+func (a *AuthInterceptor) Before(ctx context.Context, callCtx *a2asrv.CallContext, req *a2asrv.Request) (context.Context, error) {
+	callCtx.User = &a2asrv.AuthenticatedUser{
+		UserName: "user",
+	}
+	return ctx, nil
 }
 
 func main() {
@@ -89,6 +102,9 @@ func main() {
 		ArtifactService: artifactservice,
 		SessionService:  sessionService,
 		AgentLoader:     agentLoader,
+		A2AOptions: []a2asrv.RequestHandlerOption{
+			a2asrv.WithCallInterceptor(&AuthInterceptor{}),
+		},
 	}
 
 	l := full.NewLauncher()
