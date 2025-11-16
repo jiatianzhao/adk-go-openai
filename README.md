@@ -36,21 +36,72 @@ This Go version of ADK is ideal for developers building cloud-native agent appli
 - ☁️ **OpenAI API** (GPT-4, GPT-3.5-turbo)
 - 🔧 **Any OpenAI-compatible endpoint**
 
-### Features
-- ✅ Multi-turn tool calling
-- ✅ Streaming responses (SSE)
-- ✅ Session management with TTL
-- ✅ Comprehensive error handling
-- ✅ 146 tests, 74.8% coverage
+### ✨ Features
+- ✅ **Multi-turn tool calling** - Full conversation flow with tool execution
+- ✅ **Streaming responses** - Server-Sent Events (SSE) for real-time output
+- ✅ **Session management** - Automatic conversation history with TTL
+- ✅ **Error handling** - Exponential backoff, rate limiting, retry logic
+- ✅ **Comprehensive testing** - 146 tests, 74.8% coverage
 
-### Quick Start
+### 🚀 Quick Start
+
+**1. Setup Local LLM** (LM Studio recommended)
+```bash
+# Download LM Studio from https://lmstudio.ai/
+# Load google/gemma-3-12b model
+# Start local server on port 1234
+```
+
+**2. Run Example**
 ```bash
 cd examples/openai
 go build -o weather_agent main.go
 ./weather_agent console
 ```
 
-**📖 Full documentation:** [README_OPENAI.md](README_OPENAI.md)
+**3. Try it**
+```
+> What's the weather in London?
+Agent: The weather in London is sunny with a temperature of 22°C...
+```
+
+### 📦 Usage
+
+```go
+import "google.golang.org/adk/model/openai"
+
+// Create OpenAI model adapter
+model, _ := openai.NewModel("google/gemma-3-12b", &openai.Config{
+    BaseURL: "http://localhost:1234/v1",
+})
+
+// Create agent with tools
+agent, _ := llmagent.New(llmagent.Config{
+    Name:  "my_assistant",
+    Model: model,
+    Tools: []tool.Tool{/* your tools */},
+})
+```
+
+### 🏗️ Architecture
+
+```
+model/openai/
+├── openai.go          # Main adapter implementation
+├── streaming.go       # SSE streaming support
+├── converters.go      # ADK ↔ OpenAI format conversion
+├── tool_executor.go   # Tool execution engine
+├── session.go         # Session management
+└── error_handling.go  # Retry & error logic
+```
+
+### 🤖 Supported Models
+
+| Model | Provider | Tool Calling | Status |
+|-------|----------|--------------|--------|
+| Gemma 3 (12B, 4B) | Google | ✅ Full | ✅ Recommended |
+| GPT-4 | OpenAI | ✅ Full | ✅ Recommended |
+| Mistral 7B | Mistral | ⚠️ Limited | ✅ Works |
 
 ---
 
