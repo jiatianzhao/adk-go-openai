@@ -70,6 +70,12 @@ func (m *openaiModel) generateStream(ctx context.Context, req *model.LLMRequest)
 				tokens := req.Config.MaxOutputTokens
 				chatReq.MaxTokens = &tokens
 			}
+			// Map ResponseMIMEType to OpenAI response_format
+			if req.Config.ResponseMIMEType != "" {
+				if req.Config.ResponseMIMEType == "application/json" {
+					chatReq.ResponseFormat = &ResponseFormat{Type: "json_object"}
+				}
+			}
 		}
 
 		// Add tools if present

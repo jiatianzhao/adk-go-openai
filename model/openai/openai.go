@@ -13,7 +13,13 @@
 // limitations under the License.
 
 // Package openai implements the [model.LLM] interface for OpenAI-compatible APIs.
-// This includes OpenAI API, LM Studio, Ollama, and other compatible endpoints.
+// This includes OpenAI API, LM Studio, Ollama, LocalAI and other compatible endpoints.
+//
+// Compatibility notes:
+//   - Works with any OpenAI-compatible endpoint (just set BaseURL)
+//   - API key is optional (for local servers like Ollama/LM Studio)
+//   - Only sends standard headers (no cloud-specific headers)
+//   - Tested with: OpenAI API, LM Studio, Google Gemma 3
 package openai
 
 import (
@@ -75,15 +81,21 @@ type Function struct {
 	Parameters  map[string]any `json:"parameters,omitempty"`
 }
 
+// ResponseFormat specifies the format of the model's output
+type ResponseFormat struct {
+	Type string `json:"type"` // "text" or "json_object"
+}
+
 // ChatCompletionRequest represents an OpenAI chat completion request.
 type ChatCompletionRequest struct {
-	Model       string          `json:"model"`
-	Messages    []OpenAIMessage `json:"messages"`
-	Temperature *float32        `json:"temperature,omitempty"`
-	MaxTokens   *int32          `json:"max_tokens,omitempty"`
-	Tools       []Tool          `json:"tools,omitempty"`
-	ToolChoice  interface{}     `json:"tool_choice,omitempty"`
-	Stream      bool            `json:"stream,omitempty"`
+	Model          string          `json:"model"`
+	Messages       []OpenAIMessage `json:"messages"`
+	Temperature    *float32        `json:"temperature,omitempty"`
+	MaxTokens      *int32          `json:"max_tokens,omitempty"`
+	Tools          []Tool          `json:"tools,omitempty"`
+	ToolChoice     interface{}     `json:"tool_choice,omitempty"`
+	ResponseFormat *ResponseFormat `json:"response_format,omitempty"`
+	Stream         bool            `json:"stream,omitempty"`
 }
 
 // ChatCompletionResponse represents an OpenAI chat completion response.
@@ -261,6 +273,8 @@ type Config struct {
 	Timeout time.Duration
 	// Logger for session and request logging (optional)
 	Logger *log.Logger
+	// DebugLogging enables raw request/response JSON dumps (useful for debugging 400 errors)
+	DebugLogging bool
 }
 
 type openaiModel struct {
@@ -273,6 +287,7 @@ type openaiModel struct {
 	maxRetries       int
 	timeout          time.Duration
 	logger           *log.Logger
+	debugLogging     bool
 
 	// Conversation state management
 	conversations map[string]*conversationState
@@ -332,6 +347,7 @@ func NewModel(modelName string, cfg *Config) (model.LLM, error) {
 		maxRetries:       maxRetries,
 		timeout:          timeout,
 		logger:           cfg.Logger,
+		debugLogging:     cfg.DebugLogging,
 		conversations:    make(map[string]*conversationState),
 		jsonPool: sync.Pool{
 			New: func() interface{} {
@@ -493,6 +509,13 @@ func (m *openaiModel) generate(ctx context.Context, req *model.LLMRequest) (*mod
 			tokens := req.Config.MaxOutputTokens
 			chatReq.MaxTokens = &tokens
 		}
+		// Map ResponseMIMEType to OpenAI response_format
+		if req.Config.ResponseMIMEType != "" {
+			if req.Config.ResponseMIMEType == "application/json" {
+				chatReq.ResponseFormat = &ResponseFormat{Type: "json_object"}
+			}
+			// "text/plain" maps to default (no response_format)
+		}
 	}
 
 	// Add tools if present
@@ -559,6 +582,16 @@ func (m *openaiModel) makeRequest(ctx context.Context, req ChatCompletionRequest
 	// Store request body bytes for retries
 	reqBody := buf.Bytes()
 
+	// Debug logging: dump raw request
+	if m.debugLogging && m.logger != nil {
+		var prettyReq bytes.Buffer
+		if err := json.Indent(&prettyReq, reqBody, "", "  "); err == nil {
+			m.logger.Printf("=== RAW REQUEST to %s ===\n%s", url, prettyReq.String())
+		} else {
+			m.logger.Printf("=== RAW REQUEST to %s ===\n%s", url, string(reqBody))
+		}
+	}
+
 	for attempt := 0; attempt < m.maxRetries; attempt++ {
 		// Create a new request for each attempt (required for retries)
 		httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(reqBody))
@@ -598,6 +631,16 @@ func (m *openaiModel) makeRequest(ctx context.Context, req ChatCompletionRequest
 				Message: fmt.Sprintf("failed to read response: %v", err),
 			}
 			continue
+		}
+
+		// Debug logging: dump raw response
+		if m.debugLogging && m.logger != nil {
+			var prettyResp bytes.Buffer
+			if err := json.Indent(&prettyResp, body, "", "  "); err == nil {
+				m.logger.Printf("=== RAW RESPONSE (status %d) ===\n%s", resp.StatusCode, prettyResp.String())
+			} else {
+				m.logger.Printf("=== RAW RESPONSE (status %d) ===\n%s", resp.StatusCode, string(body))
+			}
 		}
 
 		// Handle success
@@ -640,10 +683,45 @@ func (m *openaiModel) makeRequest(ctx context.Context, req ChatCompletionRequest
 		}
 
 		// Handle other HTTP errors
-		lastErr = &HTTPError{
-			StatusCode: resp.StatusCode,
-			Status:     resp.Status,
-			Body:       string(body),
+		// Try to parse OpenAI error format
+		var apiError struct {
+			Error struct {
+				Message string `json:"message"`
+				Type    string `json:"type"`
+				Code    string `json:"code"`
+			} `json:"error"`
+		}
+
+		if json.Unmarshal(body, &apiError) == nil && apiError.Error.Message != "" {
+			// Map OpenAI error codes to our error types
+			errorType := ErrorTypeUnknown
+			switch apiError.Error.Code {
+			case "context_length_exceeded":
+				errorType = ErrorTypeValidation
+			case "invalid_request_error":
+				errorType = ErrorTypeValidation
+			case "authentication_error":
+				errorType = ErrorTypeValidation
+			case "rate_limit_exceeded":
+				errorType = ErrorTypeRateLimit
+			}
+
+			lastErr = &OpenAIError{
+				Type:    errorType,
+				Message: apiError.Error.Message,
+				Code:    apiError.Error.Code,
+				Details: map[string]any{
+					"status": resp.StatusCode,
+					"type":   apiError.Error.Type,
+				},
+			}
+		} else {
+			// Fallback to generic HTTP error
+			lastErr = &HTTPError{
+				StatusCode: resp.StatusCode,
+				Status:     resp.Status,
+				Body:       string(body),
+			}
 		}
 
 		// Don't retry 4xx errors (except 429) - they're client errors

@@ -16,6 +16,7 @@ package openai
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 
@@ -155,15 +156,23 @@ func (m *openaiModel) convertContent(content *genai.Content) ([]*OpenAIMessage, 
 		case part.InlineData != nil:
 			// OpenAI supports vision for images
 			if part.InlineData.MIMEType != "" && len(part.InlineData.Data) > 0 {
-				// For simplicity, we'll skip inline data for now
-				// TODO: Add support for vision API with base64 encoded images
-				continue
+				// Encode image as base64 data URL
+				imageURL := fmt.Sprintf("data:%s;base64,%s",
+					part.InlineData.MIMEType,
+					base64.StdEncoding.EncodeToString(part.InlineData.Data))
+
+				// Mark as image for multimodal content (stored temporarily as text)
+				// The actual multimodal format conversion happens when creating the message
+				textParts = append(textParts, imageURL)
 			}
 
 		case part.FileData != nil:
-			// Skip file references for now
-			// TODO: Add support for file URIs if needed
-			continue
+			// File URIs (e.g., gs://, https://, file://)
+			if part.FileData.FileURI != "" {
+				// For HTTP(S) image URLs, they can be used directly
+				// Store as text for now, will be converted to proper format if needed
+				textParts = append(textParts, part.FileData.FileURI)
+			}
 		}
 	}
 
