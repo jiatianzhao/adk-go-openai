@@ -409,7 +409,7 @@ func (m *openaiModel) convertTools(adkTools map[string]any) []Tool {
 			}
 			if params, ok := toolMap["parameters"].(map[string]any); ok {
 				tool.Function.Parameters = params
-			} else if params, ok := toolMap["inputSchema"].(map[string]any); ok {
+			} else if params, ok := toolMap["input_schema"].(map[string]any); ok {
 				tool.Function.Parameters = params
 			}
 		}
