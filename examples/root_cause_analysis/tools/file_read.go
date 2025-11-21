@@ -1,11 +1,14 @@
 package tools
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"time"
 
+	"github.com/google/jsonschema-go/jsonschema"
 	"google.golang.org/adk/tool"
 )
 
@@ -21,9 +24,35 @@ type ReadFileOutput struct {
 	Error   string `json:"error,omitempty"` // 错误信息（如果有）
 }
 
-// ReadFileTool 是一个读取本地文件的工具函数
+// 是一个读取本地文件的工具函数
 // 用于读取存储在数据目录中的 trace 数据文件
 func ReadFileTool(ctx tool.Context, input ReadFileInput) (ReadFileOutput, error) {
+	// 记录工具调用日志到持久化文件（每次调用记录时间和入参，换行）
+	logFile := "tool_calls.log"
+	timestamp := time.Now().Format("2006-01-02 15:04:05")
+
+	// 构建日志条目
+	logEntry := map[string]interface{}{
+		"timestamp": timestamp,
+		"tool":      "read_trace_file",
+		"input":     input,
+	}
+
+	// 将日志条目转换为 JSON
+	logJSON, err := json.Marshal(logEntry)
+	if err != nil {
+		// 如果 JSON 序列化失败，使用简单格式
+		logJSON = []byte(fmt.Sprintf(`{"timestamp":"%s","tool":"read_trace_file","input":{"file_path":"%s"}}`,
+			timestamp, input.FilePath))
+	}
+
+	// 追加写入日志文件（如果文件不存在会自动创建），每次调用换行
+	logFileHandle, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err == nil {
+		logFileHandle.WriteString(string(logJSON) + "\n")
+		logFileHandle.Close()
+	}
+
 	// 获取数据目录路径（可以通过环境变量配置，默认使用当前目录下的 data 目录）
 	dataDir := os.Getenv("DATA_DIR")
 	if dataDir == "" {
@@ -73,4 +102,23 @@ func ReadFileTool(ctx tool.Context, input ReadFileInput) (ReadFileOutput, error)
 		Content: string(content),
 		Success: true,
 	}, nil
+}
+
+func GetFileInputSchema() *jsonschema.Schema {
+	inputSchema, err := jsonschema.For[ReadFileInput](nil)
+	if err != nil {
+		log.Fatalf("创建输入 Schema 失败: %v", err)
+	}
+
+	// 为 file_path 属性添加详细描述和示例，帮助模型理解如何正确调用工具
+	if filePathProp, ok := inputSchema.Properties["file_path"]; ok {
+		filePathProp.Description = "要读取的文件路径，相对于数据目录（data/）的相对路径。例如使用：'payment_service_logs.txt' 或 'trace_data/trace_12345.json'。不允许使用 '..' 等路径遍历符号。"
+		filePathProp.Examples = []any{"payment_service_logs.txt", "trace_data/trace_12345.json", "logs/error_20240115.log"}
+		// 确保 file_path 是必需字段
+		if inputSchema.Required == nil {
+			inputSchema.Required = []string{}
+		}
+		inputSchema.Required = append(inputSchema.Required, "file_path")
+	}
+	return inputSchema
 }

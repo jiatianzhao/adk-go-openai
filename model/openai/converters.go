@@ -339,7 +339,56 @@ func (m *openaiModel) convertToLLMResponse(msg *OpenAIMessage, usage *Usage) (*m
 	return response, nil
 }
 
-// convertTools converts ADK tools to OpenAI tool format.
+// convertToolsFromConfig converts genai.Tool FunctionDeclarations to OpenAI tool format.
+// This is the correct way to convert tools as they are stored in req.Config.Tools.
+func (m *openaiModel) convertToolsFromConfig(genaiTools []*genai.Tool) []Tool {
+	tools := make([]Tool, 0)
+
+	for _, genaiTool := range genaiTools {
+		if genaiTool == nil || genaiTool.FunctionDeclarations == nil {
+			continue
+		}
+
+		for _, decl := range genaiTool.FunctionDeclarations {
+			if decl == nil {
+				continue
+			}
+
+			tool := Tool{
+				Type: "function",
+				Function: Function{
+					Name:        decl.Name,
+					Description: decl.Description,
+				},
+			}
+
+			// Convert ParametersJsonSchema to OpenAI parameters format
+			if decl.ParametersJsonSchema != nil {
+				// ParametersJsonSchema is already a JSON Schema object
+				// Convert it to map[string]any for OpenAI format
+				if schemaMap, ok := decl.ParametersJsonSchema.(map[string]any); ok {
+					tool.Function.Parameters = schemaMap
+				} else {
+					// Try to marshal and unmarshal to convert to map
+					schemaJSON, err := json.Marshal(decl.ParametersJsonSchema)
+					if err == nil {
+						var schemaMap map[string]any
+						if err := json.Unmarshal(schemaJSON, &schemaMap); err == nil {
+							tool.Function.Parameters = schemaMap
+						}
+					}
+				}
+			}
+
+			tools = append(tools, tool)
+		}
+	}
+
+	return tools
+}
+
+// convertTools converts ADK tools to OpenAI tool format (legacy method).
+// This is kept for backward compatibility but should use convertToolsFromConfig instead.
 func (m *openaiModel) convertTools(adkTools map[string]any) []Tool {
 	tools := make([]Tool, 0)
 

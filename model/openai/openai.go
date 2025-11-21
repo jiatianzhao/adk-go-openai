@@ -1,4 +1,4 @@
-// Copyright 2025 Google LLC
+	// Copyright 2025 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -531,8 +531,12 @@ func (m *openaiModel) generate(ctx context.Context, req *model.LLMRequest) (*mod
 		}
 	}
 
-	// Add tools if present
-	if len(req.Tools) > 0 {
+	// Add tools if present - convert from req.Config.Tools (FunctionDeclarations)
+	if req.Config != nil && len(req.Config.Tools) > 0 {
+		chatReq.Tools = m.convertToolsFromConfig(req.Config.Tools)
+		chatReq.ToolChoice = "auto"
+	} else if len(req.Tools) > 0 {
+		// Fallback to old method for backward compatibility
 		chatReq.Tools = m.convertTools(req.Tools)
 		chatReq.ToolChoice = "auto"
 	}

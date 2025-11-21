@@ -78,8 +78,12 @@ func (m *openaiModel) generateStream(ctx context.Context, req *model.LLMRequest)
 			}
 		}
 
-		// Add tools if present
-		if len(req.Tools) > 0 {
+		// Add tools if present - convert from req.Config.Tools (FunctionDeclarations)
+		if req.Config != nil && len(req.Config.Tools) > 0 {
+			chatReq.Tools = m.convertToolsFromConfig(req.Config.Tools)
+			chatReq.ToolChoice = "auto"
+		} else if len(req.Tools) > 0 {
+			// Fallback to old method for backward compatibility
 			chatReq.Tools = m.convertTools(req.Tools)
 			chatReq.ToolChoice = "auto"
 		}
