@@ -22,11 +22,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/jiatianzhao/adk-go-openai/internal/toolinternal/toolutils"
-	"github.com/jiatianzhao/adk-go-openai/internal/utils"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/adk/agent"
-
+	"google.golang.org/adk/internal/toolinternal/toolutils"
+	"google.golang.org/adk/internal/utils"
 	"google.golang.org/adk/model"
 	"google.golang.org/adk/tool"
 	"google.golang.org/genai"
