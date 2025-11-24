@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"iter"
 
-	"google.golang.org/adk/internal/llminternal/converters"
-	"google.golang.org/adk/model"
+	"github.com/jiatianzhao/adk-go-openai/internal/llminternal/converters"
+	"github.com/jiatianzhao/adk-go-openai/model"
 	"google.golang.org/genai"
 )
 

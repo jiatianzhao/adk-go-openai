@@ -22,8 +22,8 @@ import (
 
 	"github.com/a2aproject/a2a-go/a2a"
 	"github.com/a2aproject/a2a-go/a2asrv"
-	"google.golang.org/adk/model"
-	"google.golang.org/adk/session"
+	"github.com/jiatianzhao/adk-go-openai/model"
+	"github.com/jiatianzhao/adk-go-openai/session"
 	"google.golang.org/genai"
 )
 

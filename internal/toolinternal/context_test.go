@@ -17,9 +17,9 @@ package toolinternal
 import (
 	"testing"
 
-	"google.golang.org/adk/agent"
-	contextinternal "google.golang.org/adk/internal/context"
-	"google.golang.org/adk/session"
+	"github.com/jiatianzhao/adk-go-openai/agent"
+	contextinternal "github.com/jiatianzhao/adk-go-openai/internal/context"
+	"github.com/jiatianzhao/adk-go-openai/session"
 )
 
 func TestToolContext(t *testing.T) {

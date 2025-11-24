@@ -17,7 +17,7 @@ package context
 import (
 	"testing"
 
-	"google.golang.org/adk/agent"
+	"github.com/jiatianzhao/adk-go-openai/agent"
 )
 
 func TestReadonlyContext(t *testing.T) {

@@ -24,10 +24,10 @@ import (
 	a2acore "github.com/a2aproject/a2a-go/a2a"
 	"github.com/a2aproject/a2a-go/a2aclient"
 	"github.com/a2aproject/a2a-go/a2aclient/agentcard"
-	"google.golang.org/adk/agent"
-	"google.golang.org/adk/cmd/launcher"
-	"google.golang.org/adk/cmd/launcher/web"
-	"google.golang.org/adk/session"
+	"github.com/jiatianzhao/adk-go-openai/agent"
+	"github.com/jiatianzhao/adk-go-openai/cmd/launcher"
+	"github.com/jiatianzhao/adk-go-openai/cmd/launcher/web"
+	"github.com/jiatianzhao/adk-go-openai/session"
 	"google.golang.org/genai"
 )
 

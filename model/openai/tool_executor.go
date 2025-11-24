@@ -24,7 +24,7 @@ import (
 	"sync"
 	"time"
 
-	"google.golang.org/adk/tool"
+	"github.com/jiatianzhao/adk-go-openai/tool"
 	"google.golang.org/genai"
 )
 

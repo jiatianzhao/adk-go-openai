@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"google.golang.org/adk/session"
+	"github.com/jiatianzhao/adk-go-openai/session"
 	"gorm.io/gorm"
 )
 

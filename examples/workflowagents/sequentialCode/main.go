@@ -19,12 +19,12 @@ import (
 	"log"
 	"os"
 
-	"google.golang.org/adk/agent"
-	"google.golang.org/adk/agent/llmagent"
-	"google.golang.org/adk/agent/workflowagents/sequentialagent"
-	"google.golang.org/adk/cmd/launcher"
-	"google.golang.org/adk/cmd/launcher/full"
-	"google.golang.org/adk/model/gemini"
+	"github.com/jiatianzhao/adk-go-openai/agent"
+	"github.com/jiatianzhao/adk-go-openai/agent/llmagent"
+	"github.com/jiatianzhao/adk-go-openai/agent/workflowagents/sequentialagent"
+	"github.com/jiatianzhao/adk-go-openai/cmd/launcher"
+	"github.com/jiatianzhao/adk-go-openai/cmd/launcher/full"
+	"github.com/jiatianzhao/adk-go-openai/model/gemini"
 	"google.golang.org/genai"
 )
 

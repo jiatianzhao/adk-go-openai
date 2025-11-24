@@ -18,8 +18,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"google.golang.org/adk/artifact"
-	artifactinternal "google.golang.org/adk/internal/artifact"
+	"github.com/jiatianzhao/adk-go-openai/artifact"
+	artifactinternal "github.com/jiatianzhao/adk-go-openai/internal/artifact"
 	"google.golang.org/genai"
 )
 

@@ -18,8 +18,8 @@ package exitlooptool
 import (
 	"fmt"
 
-	"google.golang.org/adk/tool"
-	"google.golang.org/adk/tool/functiontool"
+	"github.com/jiatianzhao/adk-go-openai/tool"
+	"github.com/jiatianzhao/adk-go-openai/tool/functiontool"
 )
 
 // EmptyArgs is an empty struct used as an argument for the exitLoop tool.

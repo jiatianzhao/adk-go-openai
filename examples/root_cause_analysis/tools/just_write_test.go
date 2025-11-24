@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/adk/examples/root_cause_analysis/tools"
+	"github.com/jiatianzhao/adk-go-openai/examples/root_cause_analysis/tools"
 )
 
 func TestWriteFileTool(t *testing.T) {

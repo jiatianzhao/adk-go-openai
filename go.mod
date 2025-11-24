@@ -1,8 +1,6 @@
-module github.com/jiatianzhao/adk-go-openai/adk
+module github.com/jiatianzhao/adk-go-openai
 
 go 1.24.4
-
-replace google.golang.org/adk => github.com/jiatianzhao/adk-go-openai v1.0.0
 
 require (
 	cloud.google.com/go/storage v1.56.1
@@ -19,7 +17,6 @@ require (
 require (
 	github.com/google/jsonschema-go v0.3.0
 	github.com/modelcontextprotocol/go-sdk v0.7.0
-	google.golang.org/adk v0.0.0-00010101000000-000000000000
 	google.golang.org/grpc v1.76.0
 	gorm.io/driver/sqlite v1.6.0
 	gorm.io/gorm v1.31.0
@@ -67,6 +64,7 @@ require (
 	cloud.google.com/go v0.123.0 // indirect
 	cloud.google.com/go/auth v0.17.0 // indirect
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
+	cloud.google.com/go/longrunning v0.7.0 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.6 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect

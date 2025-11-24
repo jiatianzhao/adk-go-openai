@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/google/jsonschema-go/jsonschema"
-	"google.golang.org/adk/tool"
+	"github.com/jiatianzhao/adk-go-openai/tool"
 )
 
 // ReadFileInput 定义读取文件工具的输入参数

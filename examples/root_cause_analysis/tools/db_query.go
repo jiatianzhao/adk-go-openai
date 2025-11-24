@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"google.golang.org/adk/tool"
+	"github.com/jiatianzhao/adk-go-openai/tool"
 )
 
 // QueryDBTool 是一个查询数据库的工具函数

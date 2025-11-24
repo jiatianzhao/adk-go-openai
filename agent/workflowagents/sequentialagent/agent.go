@@ -18,9 +18,9 @@ package sequentialagent
 import (
 	"fmt"
 
-	"google.golang.org/adk/agent"
-	"google.golang.org/adk/agent/workflowagents/loopagent"
-	agentinternal "google.golang.org/adk/internal/agent"
+	"github.com/jiatianzhao/adk-go-openai/agent"
+	"github.com/jiatianzhao/adk-go-openai/agent/workflowagents/loopagent"
+	agentinternal "github.com/jiatianzhao/adk-go-openai/internal/agent"
 )
 
 // New creates a SequentialAgent.

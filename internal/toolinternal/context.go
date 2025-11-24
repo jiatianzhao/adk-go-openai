@@ -18,12 +18,12 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"google.golang.org/adk/agent"
-	"google.golang.org/adk/artifact"
-	contextinternal "google.golang.org/adk/internal/context"
-	"google.golang.org/adk/memory"
-	"google.golang.org/adk/session"
-	"google.golang.org/adk/tool"
+	"github.com/jiatianzhao/adk-go-openai/agent"
+	"github.com/jiatianzhao/adk-go-openai/artifact"
+	contextinternal "github.com/jiatianzhao/adk-go-openai/internal/context"
+	"github.com/jiatianzhao/adk-go-openai/memory"
+	"github.com/jiatianzhao/adk-go-openai/session"
+	"github.com/jiatianzhao/adk-go-openai/tool"
 	"google.golang.org/genai"
 )
 

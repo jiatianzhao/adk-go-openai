@@ -24,7 +24,7 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/adk/tool"
+	"github.com/jiatianzhao/adk-go-openai/tool"
 )
 
 // simpleTool is a simplified tool for testing that doesn't need full tool.Context

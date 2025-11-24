@@ -35,7 +35,7 @@ import (
 	"sync"
 	"time"
 
-	"google.golang.org/adk/model"
+	"github.com/jiatianzhao/adk-go-openai/model"
 )
 
 const (

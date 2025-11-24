@@ -17,8 +17,8 @@ package models
 import (
 	"time"
 
-	"google.golang.org/adk/model"
-	"google.golang.org/adk/session"
+	"github.com/jiatianzhao/adk-go-openai/model"
+	"github.com/jiatianzhao/adk-go-openai/session"
 	"google.golang.org/genai"
 )
 

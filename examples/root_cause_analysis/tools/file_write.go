@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"google.golang.org/adk/tool"
+	"github.com/jiatianzhao/adk-go-openai/tool"
 )
 
 // WriteFileInput 定义文件写入工具的输入参数

@@ -25,8 +25,8 @@ import (
 	"time"
 
 	"cloud.google.com/go/storage"
-	"google.golang.org/adk/artifact"
-	"google.golang.org/adk/internal/artifact/tests"
+	"github.com/jiatianzhao/adk-go-openai/artifact"
+	"github.com/jiatianzhao/adk-go-openai/internal/artifact/tests"
 	"google.golang.org/api/iterator"
 )
 

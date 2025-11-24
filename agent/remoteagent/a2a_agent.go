@@ -25,10 +25,10 @@ import (
 	"github.com/a2aproject/a2a-go/a2a"
 	"github.com/a2aproject/a2a-go/a2aclient"
 	"github.com/a2aproject/a2a-go/a2aclient/agentcard"
-	"google.golang.org/adk/agent"
-	"google.golang.org/adk/internal/converters"
-	"google.golang.org/adk/server/adka2a"
-	"google.golang.org/adk/session"
+	"github.com/jiatianzhao/adk-go-openai/agent"
+	"github.com/jiatianzhao/adk-go-openai/internal/converters"
+	"github.com/jiatianzhao/adk-go-openai/server/adka2a"
+	"github.com/jiatianzhao/adk-go-openai/session"
 )
 
 // A2AConfig is used to describe and configure a remote agent.

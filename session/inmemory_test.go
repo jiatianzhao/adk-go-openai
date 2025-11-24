@@ -22,7 +22,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"google.golang.org/adk/model"
+	"github.com/jiatianzhao/adk-go-openai/model"
 	"google.golang.org/genai"
 )
 

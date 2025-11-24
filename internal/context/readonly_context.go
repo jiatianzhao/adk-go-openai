@@ -17,8 +17,8 @@ package context
 import (
 	"context"
 
-	"google.golang.org/adk/agent"
-	"google.golang.org/adk/session"
+	"github.com/jiatianzhao/adk-go-openai/agent"
+	"github.com/jiatianzhao/adk-go-openai/session"
 	"google.golang.org/genai"
 )
 

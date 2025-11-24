@@ -24,16 +24,16 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"google.golang.org/adk/agent"
-	"google.golang.org/adk/agent/llmagent"
-	"google.golang.org/adk/internal/httprr"
-	"google.golang.org/adk/internal/testutil"
-	"google.golang.org/adk/tool/functiontool"
+	"github.com/jiatianzhao/adk-go-openai/agent"
+	"github.com/jiatianzhao/adk-go-openai/agent/llmagent"
+	"github.com/jiatianzhao/adk-go-openai/internal/httprr"
+	"github.com/jiatianzhao/adk-go-openai/internal/testutil"
+	"github.com/jiatianzhao/adk-go-openai/tool/functiontool"
 
-	"google.golang.org/adk/model"
-	"google.golang.org/adk/model/gemini"
-	"google.golang.org/adk/session"
-	"google.golang.org/adk/tool"
+	"github.com/jiatianzhao/adk-go-openai/model"
+	"github.com/jiatianzhao/adk-go-openai/model/gemini"
+	"github.com/jiatianzhao/adk-go-openai/session"
+	"github.com/jiatianzhao/adk-go-openai/tool"
 	"google.golang.org/genai"
 )
 

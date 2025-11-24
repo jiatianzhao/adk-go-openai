@@ -25,7 +25,7 @@ import (
 	"net/http"
 	"strings"
 
-	"google.golang.org/adk/model"
+	"github.com/jiatianzhao/adk-go-openai/model"
 	"google.golang.org/genai"
 )
 

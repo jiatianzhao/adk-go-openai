@@ -26,14 +26,14 @@ package main
 //	"time"
 //
 //	"github.com/google/jsonschema-go/jsonschema"
-//	agentA "google.golang.org/adk/agent"
-//	"google.golang.org/adk/agent/llmagent"
-//	"google.golang.org/adk/artifact"
-//	"google.golang.org/adk/model/openai"
-//	runnerA "google.golang.org/adk/runner"
-//	sessionA "google.golang.org/adk/session"
-//	"google.golang.org/adk/tool"
-//	"google.golang.org/adk/tool/functiontool"
+//	agentA "github.com/jiatianzhao/adk-go-openai/agent"
+//	"github.com/jiatianzhao/adk-go-openai/agent/llmagent"
+//	"github.com/jiatianzhao/adk-go-openai/artifact"
+//	"github.com/jiatianzhao/adk-go-openai/model/openai"
+//	runnerA "github.com/jiatianzhao/adk-go-openai/runner"
+//	sessionA "github.com/jiatianzhao/adk-go-openai/session"
+//	"github.com/jiatianzhao/adk-go-openai/tool"
+//	"github.com/jiatianzhao/adk-go-openai/tool/functiontool"
 //	"google.golang.org/genai"
 //)
 //

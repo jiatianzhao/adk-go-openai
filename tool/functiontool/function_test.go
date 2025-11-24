@@ -25,14 +25,14 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/jsonschema-go/jsonschema"
-	"google.golang.org/adk/internal/httprr"
-	"google.golang.org/adk/internal/testutil"
-	"google.golang.org/adk/internal/toolinternal"
-	"google.golang.org/adk/internal/typeutil"
-	"google.golang.org/adk/model"
-	"google.golang.org/adk/model/gemini"
-	"google.golang.org/adk/tool"
-	"google.golang.org/adk/tool/functiontool"
+	"github.com/jiatianzhao/adk-go-openai/internal/httprr"
+	"github.com/jiatianzhao/adk-go-openai/internal/testutil"
+	"github.com/jiatianzhao/adk-go-openai/internal/toolinternal"
+	"github.com/jiatianzhao/adk-go-openai/internal/typeutil"
+	"github.com/jiatianzhao/adk-go-openai/model"
+	"github.com/jiatianzhao/adk-go-openai/model/gemini"
+	"github.com/jiatianzhao/adk-go-openai/tool"
+	"github.com/jiatianzhao/adk-go-openai/tool/functiontool"
 	"google.golang.org/genai"
 )
 

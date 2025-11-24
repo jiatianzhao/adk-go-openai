@@ -19,10 +19,10 @@ import (
 	"context"
 
 	"github.com/a2aproject/a2a-go/a2asrv"
-	"google.golang.org/adk/agent"
-	"google.golang.org/adk/artifact"
-	"google.golang.org/adk/memory"
-	"google.golang.org/adk/session"
+	"github.com/jiatianzhao/adk-go-openai/agent"
+	"github.com/jiatianzhao/adk-go-openai/artifact"
+	"github.com/jiatianzhao/adk-go-openai/memory"
+	"github.com/jiatianzhao/adk-go-openai/session"
 )
 
 // Launcher is the main interface for running an ADK application.

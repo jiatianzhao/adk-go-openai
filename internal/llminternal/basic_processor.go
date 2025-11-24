@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"reflect"
 
-	"google.golang.org/adk/agent"
-	"google.golang.org/adk/model"
+	"github.com/jiatianzhao/adk-go-openai/agent"
+	"github.com/jiatianzhao/adk-go-openai/model"
 	"google.golang.org/genai"
 )
 

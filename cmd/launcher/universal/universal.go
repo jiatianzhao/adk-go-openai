@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strings"
 
-	"google.golang.org/adk/cmd/launcher"
+	"github.com/jiatianzhao/adk-go-openai/cmd/launcher"
 )
 
 // uniLauncher contains information about sublaunchers

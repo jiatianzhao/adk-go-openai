@@ -21,11 +21,11 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
-	imemory "google.golang.org/adk/internal/memory"
-	"google.golang.org/adk/internal/sessioninternal"
-	"google.golang.org/adk/memory"
-	"google.golang.org/adk/model"
-	"google.golang.org/adk/session"
+	imemory "github.com/jiatianzhao/adk-go-openai/internal/memory"
+	"github.com/jiatianzhao/adk-go-openai/internal/sessioninternal"
+	"github.com/jiatianzhao/adk-go-openai/memory"
+	"github.com/jiatianzhao/adk-go-openai/model"
+	"github.com/jiatianzhao/adk-go-openai/session"
 	"google.golang.org/genai"
 )
 

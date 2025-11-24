@@ -21,11 +21,11 @@ import (
 	"strings"
 	"unicode"
 
-	"google.golang.org/adk/agent"
-	"google.golang.org/adk/internal/agent/parentmap"
-	icontext "google.golang.org/adk/internal/context"
-	"google.golang.org/adk/internal/utils"
-	"google.golang.org/adk/model"
+	"github.com/jiatianzhao/adk-go-openai/agent"
+	"github.com/jiatianzhao/adk-go-openai/internal/agent/parentmap"
+	icontext "github.com/jiatianzhao/adk-go-openai/internal/context"
+	"github.com/jiatianzhao/adk-go-openai/internal/utils"
+	"github.com/jiatianzhao/adk-go-openai/model"
 )
 
 // TODO: Remove this once state keywords are implemented and replace with those consts

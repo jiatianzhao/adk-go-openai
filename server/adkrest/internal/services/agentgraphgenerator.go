@@ -20,11 +20,11 @@ import (
 	"slices"
 
 	"github.com/awalterschulze/gographviz"
-	"google.golang.org/adk/agent"
-	"google.golang.org/adk/tool"
+	"github.com/jiatianzhao/adk-go-openai/agent"
+	"github.com/jiatianzhao/adk-go-openai/tool"
 
-	agentinternal "google.golang.org/adk/internal/agent"
-	llmagentinternal "google.golang.org/adk/internal/llminternal"
+	agentinternal "github.com/jiatianzhao/adk-go-openai/internal/agent"
+	llmagentinternal "github.com/jiatianzhao/adk-go-openai/internal/llminternal"
 )
 
 const (

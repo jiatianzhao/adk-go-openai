@@ -19,14 +19,14 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	artifactinternal "google.golang.org/adk/internal/artifact"
-	icontext "google.golang.org/adk/internal/context"
-	"google.golang.org/adk/internal/toolinternal"
-	"google.golang.org/adk/model"
-	"google.golang.org/adk/tool/loadartifactstool"
+	artifactinternal "github.com/jiatianzhao/adk-go-openai/internal/artifact"
+	icontext "github.com/jiatianzhao/adk-go-openai/internal/context"
+	"github.com/jiatianzhao/adk-go-openai/internal/toolinternal"
+	"github.com/jiatianzhao/adk-go-openai/model"
+	"github.com/jiatianzhao/adk-go-openai/tool/loadartifactstool"
 
-	"google.golang.org/adk/artifact"
-	"google.golang.org/adk/tool"
+	"github.com/jiatianzhao/adk-go-openai/artifact"
+	"github.com/jiatianzhao/adk-go-openai/tool"
 	"google.golang.org/genai"
 )
 

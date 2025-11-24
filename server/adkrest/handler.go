@@ -18,11 +18,11 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"google.golang.org/adk/cmd/launcher"
-	"google.golang.org/adk/internal/telemetry"
-	"google.golang.org/adk/server/adkrest/controllers"
-	"google.golang.org/adk/server/adkrest/internal/routers"
-	"google.golang.org/adk/server/adkrest/internal/services"
+	"github.com/jiatianzhao/adk-go-openai/cmd/launcher"
+	"github.com/jiatianzhao/adk-go-openai/internal/telemetry"
+	"github.com/jiatianzhao/adk-go-openai/server/adkrest/controllers"
+	"github.com/jiatianzhao/adk-go-openai/server/adkrest/internal/routers"
+	"github.com/jiatianzhao/adk-go-openai/server/adkrest/internal/services"
 
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )

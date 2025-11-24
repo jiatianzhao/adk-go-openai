@@ -19,11 +19,11 @@ import (
 	"fmt"
 	"iter"
 
-	"google.golang.org/adk/artifact"
-	agentinternal "google.golang.org/adk/internal/agent"
-	"google.golang.org/adk/memory"
-	"google.golang.org/adk/model"
-	"google.golang.org/adk/session"
+	"github.com/jiatianzhao/adk-go-openai/artifact"
+	agentinternal "github.com/jiatianzhao/adk-go-openai/internal/agent"
+	"github.com/jiatianzhao/adk-go-openai/memory"
+	"github.com/jiatianzhao/adk-go-openai/model"
+	"github.com/jiatianzhao/adk-go-openai/session"
 	"google.golang.org/genai"
 )
 
