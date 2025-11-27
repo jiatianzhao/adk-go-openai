@@ -368,15 +368,33 @@ func (m *openaiModel) convertToolsFromConfig(genaiTools []*genai.Tool) []Tool {
 				// Convert it to map[string]any for OpenAI format
 				if schemaMap, ok := decl.ParametersJsonSchema.(map[string]any); ok {
 					tool.Function.Parameters = schemaMap
+					if m.logger != nil {
+						m.logger.Printf("DEBUG: Tool %q parameters set directly from map (type: %T)", decl.Name, decl.ParametersJsonSchema)
+					}
 				} else {
 					// Try to marshal and unmarshal to convert to map
 					schemaJSON, err := json.Marshal(decl.ParametersJsonSchema)
-					if err == nil {
+					if err != nil {
+						if m.logger != nil {
+							m.logger.Printf("ERROR: Failed to marshal ParametersJsonSchema for tool %q (type: %T): %v", decl.Name, decl.ParametersJsonSchema, err)
+						}
+					} else {
 						var schemaMap map[string]any
-						if err := json.Unmarshal(schemaJSON, &schemaMap); err == nil {
+						if err := json.Unmarshal(schemaJSON, &schemaMap); err != nil {
+							if m.logger != nil {
+								m.logger.Printf("ERROR: Failed to unmarshal ParametersJsonSchema for tool %q: %v (JSON: %s)", decl.Name, err, string(schemaJSON))
+							}
+						} else {
 							tool.Function.Parameters = schemaMap
+							if m.logger != nil {
+								m.logger.Printf("DEBUG: Tool %q parameters converted successfully (has %d top-level keys)", decl.Name, len(schemaMap))
+							}
 						}
 					}
+				}
+			} else {
+				if m.logger != nil {
+					m.logger.Printf("WARNING: Tool %q has no ParametersJsonSchema", decl.Name)
 				}
 			}
 

@@ -82,6 +82,12 @@ func (m *openaiModel) generateStream(ctx context.Context, req *model.LLMRequest)
 		if req.Config != nil && len(req.Config.Tools) > 0 {
 			chatReq.Tools = m.convertToolsFromConfig(req.Config.Tools)
 			chatReq.ToolChoice = "auto"
+			if m.debugLogging && m.logger != nil {
+				for _, tool := range chatReq.Tools {
+					paramsJSON, _ := json.Marshal(tool.Function.Parameters)
+					m.logger.Printf("DEBUG: Tool %q parameters: %s", tool.Function.Name, string(paramsJSON))
+				}
+			}
 		} else if len(req.Tools) > 0 {
 			// Fallback to old method for backward compatibility
 			chatReq.Tools = m.convertTools(req.Tools)
