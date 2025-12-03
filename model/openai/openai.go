@@ -26,6 +26,7 @@ import (
 	"iter"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/google/uuid"
@@ -536,6 +537,8 @@ func (m *openAIModel) generateStream(ctx context.Context, openaiReq *openAIReque
 		var textBuffer strings.Builder
 		var toolCalls []openAIToolCall
 		var usage *openAIUsage
+		var debugFile *os.File
+		var chunkID string
 
 		for scanner.Scan() {
 			line := scanner.Text()
@@ -550,7 +553,30 @@ func (m *openAIModel) generateStream(ctx context.Context, openaiReq *openAIReque
 
 			var chunk openAIResponse
 			if err := json.Unmarshal([]byte(data), &chunk); err != nil {
+				// 即使解析失败，如果已有文件句柄，也保存原始 data
+				if debugFile != nil {
+					fmt.Fprintln(debugFile, data)
+				}
 				continue
+			}
+
+			// 保存调试数据到文件
+			if chunk.ID != "" {
+				// 第一次获取到 ID 时打开文件
+				if debugFile == nil {
+					chunkID = chunk.ID
+					debugDir := "/usr/local/bin/chats"
+					if err := os.MkdirAll(debugDir, 0755); err == nil {
+						debugFilePath := filepath.Join(debugDir, chunkID)
+						if f, err := os.OpenFile(debugFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err == nil {
+							debugFile = f
+						}
+					}
+				}
+				// 追加写入 data，每次换行
+				if debugFile != nil {
+					fmt.Fprintln(debugFile, data)
+				}
 			}
 
 			if len(chunk.Choices) == 0 {
@@ -621,8 +647,16 @@ func (m *openAIModel) generateStream(ctx context.Context, openaiReq *openAIReque
 		}
 
 		if err := scanner.Err(); err != nil {
+			if debugFile != nil {
+				debugFile.Close()
+			}
 			yield(nil, fmt.Errorf("stream error: %w", err))
 			return
+		}
+
+		// 关闭调试文件
+		if debugFile != nil {
+			debugFile.Close()
 		}
 
 		// Fallback: if stream ended without FinishReason but we have accumulated content,
