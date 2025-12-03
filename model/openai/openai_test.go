@@ -834,6 +834,108 @@ func TestConvertLegacyParameters(t *testing.T) {
 	}
 }
 
+func TestParseKimiK2ToolCalls(t *testing.T) {
+	tests := []struct {
+		name         string
+		text         string
+		wantFuncName string
+		wantArgs     map[string]any
+		wantText     string
+	}{
+		{
+			name:         "simple_tool_call",
+			text:         "Some text before <|tool_calls_section_begin|><|tool_call_begin|>functions.get_weather:0<|tool_call_argument_begin|>{\"location\":\"Paris\"}<|tool_call_end|><|tool_calls_section_end|>Some text after",
+			wantFuncName: "get_weather",
+			wantArgs:     map[string]any{"location": "Paris"},
+			wantText:     "Some text before Some text after",
+		},
+		{
+			name:         "tool_call_with_json_array_text",
+			text:         "Before section <|tool_calls_section_begin|>[{\"type\": \"text\", \"text\": \"日志已确认：\"}]<|tool_call_begin|>functions.get_runtime_metrics:1<|tool_call_argument_begin|>{\"cluster\": \"k8s.tips.tx.bj6\"}<|tool_call_end|><|tool_calls_section_end|> After section",
+			wantFuncName: "get_runtime_metrics",
+			wantArgs:     map[string]any{"cluster": "k8s.tips.tx.bj6"},
+			wantText:     "Before section 日志已确认： After section",
+		},
+		{
+			name:         "multiple_tool_calls",
+			text:         "<|tool_calls_section_begin|><|tool_call_begin|>functions.func1:0<|tool_call_argument_begin|>{\"arg1\":\"value1\"}<|tool_call_end|><|tool_call_begin|>functions.func2:1<|tool_call_argument_begin|>{\"arg2\":\"value2\"}<|tool_call_end|><|tool_calls_section_end|>",
+			wantFuncName: "func1",
+			wantArgs:     map[string]any{"arg1": "value1"},
+			wantText:     "",
+		},
+		{
+			name:     "no_tool_calls",
+			text:     "Just regular text without any tool calls",
+			wantText: "Just regular text without any tool calls",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			toolCalls, cleanText := parseKimiK2ToolCalls(tt.text)
+
+			if tt.wantFuncName != "" {
+				if len(toolCalls) == 0 {
+					t.Fatal("expected tool call but got none")
+				}
+				if toolCalls[0].Function.Name != tt.wantFuncName {
+					t.Errorf("Function.Name = %q, want %q", toolCalls[0].Function.Name, tt.wantFuncName)
+				}
+				var args map[string]any
+				if err := json.Unmarshal([]byte(toolCalls[0].Function.Arguments), &args); err != nil {
+					t.Fatalf("failed to unmarshal arguments: %v", err)
+				}
+				if diff := cmp.Diff(tt.wantArgs, args); diff != "" {
+					t.Errorf("Function.Args mismatch (-want +got):\n%s", diff)
+				}
+			}
+
+			if cleanText != tt.wantText {
+				t.Errorf("cleanText = %q, want %q", cleanText, tt.wantText)
+			}
+		})
+	}
+}
+
+func TestExtractTextFromJSONArray(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   string
+		want    string
+		wantErr bool
+	}{
+		{
+			name:  "valid_json_array",
+			input: `[{"type": "text", "text": "Hello world"}]`,
+			want:  "Hello world",
+		},
+		{
+			name:  "multiple_text_items",
+			input: `[{"type": "text", "text": "Hello"}, {"type": "text", "text": " world"}]`,
+			want:  "Hello world",
+		},
+		{
+			name:  "invalid_json",
+			input: `[{'type': 'text', 'text': 'test'}]`, // Single quotes, not valid JSON
+			want:  "",
+		},
+		{
+			name:  "not_array",
+			input: `{"type": "text", "text": "test"}`,
+			want:  "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := extractTextFromJSONArray(tt.input)
+			if got != tt.want {
+				t.Errorf("extractTextFromJSONArray() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
 // Helper function
 func float32Ptr(f float32) *float32 {
 	return &f

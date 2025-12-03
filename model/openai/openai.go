@@ -536,6 +536,7 @@ func (m *openAIModel) generateStream(ctx context.Context, openaiReq *openAIReque
 		var textBuffer strings.Builder
 		var toolCalls []openAIToolCall
 		var usage *openAIUsage
+		var kimiK2Buffer strings.Builder // Buffer for accumulating kimi-k2 tool call tags
 
 		for scanner.Scan() {
 			line := scanner.Text()
@@ -565,25 +566,118 @@ func (m *openAIModel) generateStream(ctx context.Context, openaiReq *openAIReque
 
 			// Handle text content
 			if delta.Content != nil {
-				if text, ok := delta.Content.(string); ok && text != "" {
-					textBuffer.WriteString(text)
-					// Yield partial response
-					llmResp := &model.LLMResponse{
-						Content: &genai.Content{
-							Role: "model",
-							Parts: []*genai.Part{
-								{Text: text},
-							},
-						},
-						Partial: true,
+				var text string
+				// Handle both string and array formats
+				switch v := delta.Content.(type) {
+				case string:
+					text = v
+				case []any:
+					// Extract text from content array (e.g., [{"type": "text", "text": "..."}])
+					var texts []string
+					for _, item := range v {
+						if itemMap, ok := item.(map[string]any); ok {
+							if itemType, _ := itemMap["type"].(string); itemType == "text" {
+								if itemText, _ := itemMap["text"].(string); itemText != "" {
+									texts = append(texts, itemText)
+								}
+							}
+						}
 					}
-					if !yield(llmResp, nil) {
-						return
+					text = strings.Join(texts, "")
+				}
+
+				if text != "" {
+					// Check if this text contains kimi-k2 tool call tags
+					if strings.Contains(text, "<|tool_call") || strings.Contains(text, "<|tool_calls_section") {
+						// Accumulate text that might contain tool call tags
+						kimiK2Buffer.WriteString(text)
+
+						// Try to parse complete tool calls from accumulated buffer
+						// This handles cases where tags span multiple chunks
+						bufferText := kimiK2Buffer.String()
+						if strings.Contains(bufferText, "<|tool_calls_section_begin|>") {
+							// Check if we have a complete section
+							if strings.Contains(bufferText, "<|tool_calls_section_end|>") {
+								// Parse tool calls from the buffer
+								parsedCalls, cleanText := parseKimiK2ToolCalls(bufferText)
+								if len(parsedCalls) > 0 {
+									// Add parsed tool calls
+									toolCalls = append(toolCalls, parsedCalls...)
+									// Update text buffer: keep existing text and append cleaned text
+									if cleanText != "" {
+										textBuffer.WriteString(cleanText)
+									}
+									// Clear kimi-k2 buffer
+									kimiK2Buffer.Reset()
+								}
+							} else {
+								// Incomplete section, don't yield anything yet
+								// Just accumulate in buffer
+							}
+						} else {
+							// Has tool call tags but no section begin, might be malformed
+							// Try to extract any clean text before the tags
+							cleanText := removeIncompleteKimiK2Tags(text)
+							if cleanText != "" && cleanText != text {
+								textBuffer.WriteString(cleanText)
+								// Yield partial response with cleaned text
+								llmResp := &model.LLMResponse{
+									Content: &genai.Content{
+										Role: "model",
+										Parts: []*genai.Part{
+											{Text: cleanText},
+										},
+									},
+									Partial: true,
+								}
+								if !yield(llmResp, nil) {
+									return
+								}
+							}
+						}
+
+						// Don't yield partial response for text with tool call tags
+						// We'll yield when we have complete tool calls or at the end
+						continue
+					} else {
+						// Normal text content, clear kimi-k2 buffer and add to text buffer
+						if kimiK2Buffer.Len() > 0 {
+							// If we had accumulated kimi-k2 content, try to parse it one more time
+							bufferText := kimiK2Buffer.String()
+							parsedCalls, cleanText := parseKimiK2ToolCalls(bufferText)
+							if len(parsedCalls) > 0 {
+								toolCalls = append(toolCalls, parsedCalls...)
+								if cleanText != "" {
+									textBuffer.WriteString(cleanText)
+								}
+							} else {
+								// Remove incomplete tags
+								cleaned := removeIncompleteKimiK2Tags(bufferText)
+								if cleaned != "" {
+									textBuffer.WriteString(cleaned)
+								}
+							}
+							kimiK2Buffer.Reset()
+						}
+						textBuffer.WriteString(text)
+						// Yield partial response
+						llmResp := &model.LLMResponse{
+							Content: &genai.Content{
+								Role: "model",
+								Parts: []*genai.Part{
+									{Text: text},
+								},
+							},
+							Partial: true,
+						}
+						if !yield(llmResp, nil) {
+							return
+						}
 					}
 				}
 			}
 
-			// Handle tool calls
+			// Handle standard OpenAI tool calls
 			if len(delta.ToolCalls) > 0 {
 				for idx, tc := range delta.ToolCalls {
 					targetIdx := idx
@@ -614,6 +708,24 @@ func (m *openAIModel) generateStream(ctx context.Context, openaiReq *openAIReque
 
 			// Handle finish
 			if choice.FinishReason != "" {
+				// Before building final response, check if we have any remaining kimi-k2 tool calls to parse
+				if kimiK2Buffer.Len() > 0 {
+					bufferText := kimiK2Buffer.String()
+					parsedCalls, cleanText := parseKimiK2ToolCalls(bufferText)
+					if len(parsedCalls) > 0 {
+						toolCalls = append(toolCalls, parsedCalls...)
+						textBuffer.Reset()
+						textBuffer.WriteString(cleanText)
+					} else {
+						// If we couldn't parse tool calls, try to clean the text
+						// Remove any incomplete kimi-k2 tags
+						cleaned := removeIncompleteKimiK2Tags(bufferText)
+						if cleaned != bufferText {
+							textBuffer.Reset()
+							textBuffer.WriteString(cleaned)
+						}
+					}
+				}
 				finalResp := m.buildFinalResponse(textBuffer.String(), toolCalls, usage, choice.FinishReason)
 				yield(finalResp, nil)
 				return
@@ -627,11 +739,59 @@ func (m *openAIModel) generateStream(ctx context.Context, openaiReq *openAIReque
 
 		// Fallback: if stream ended without FinishReason but we have accumulated content,
 		// send the final response. This handles non-compliant OpenAI-compatible APIs.
+		// Check for any remaining kimi-k2 tool calls before building final response
+		if kimiK2Buffer.Len() > 0 {
+			bufferText := kimiK2Buffer.String()
+			parsedCalls, cleanText := parseKimiK2ToolCalls(bufferText)
+			if len(parsedCalls) > 0 {
+				toolCalls = append(toolCalls, parsedCalls...)
+				textBuffer.Reset()
+				textBuffer.WriteString(cleanText)
+			} else {
+				// Remove incomplete tags
+				cleaned := removeIncompleteKimiK2Tags(bufferText)
+				if cleaned != bufferText {
+					textBuffer.Reset()
+					textBuffer.WriteString(cleaned)
+				}
+			}
+		}
 		if textBuffer.Len() > 0 || len(toolCalls) > 0 {
 			finalResp := m.buildFinalResponse(textBuffer.String(), toolCalls, usage, "stop")
 			yield(finalResp, nil)
 		}
 	}
+}
+
+// removeIncompleteKimiK2Tags removes incomplete kimi-k2 tool call tags from text.
+// This is used when the stream ends before a complete tool call section is received.
+func removeIncompleteKimiK2Tags(text string) string {
+	const (
+		sectionBegin = "<|tool_calls_section_begin|>"
+		sectionEnd   = "<|tool_calls_section_end|>"
+		callBegin    = "<|tool_call_begin|>"
+		callEnd      = "<|tool_call_end|>"
+		argBegin     = "<|tool_call_argument_begin|>"
+	)
+
+	result := text
+
+	// Remove incomplete sections (section begin without end)
+	if strings.Contains(result, sectionBegin) && !strings.Contains(result, sectionEnd) {
+		start := strings.Index(result, sectionBegin)
+		result = result[:start] + strings.TrimPrefix(result[start:], sectionBegin)
+		// Also remove any incomplete tool call tags after section begin
+		result = strings.ReplaceAll(result, callBegin, "")
+		result = strings.ReplaceAll(result, callEnd, "")
+		result = strings.ReplaceAll(result, argBegin, "")
+	}
+
+	// Remove any standalone incomplete tags
+	result = strings.ReplaceAll(result, callBegin, "")
+	result = strings.ReplaceAll(result, callEnd, "")
+	result = strings.ReplaceAll(result, argBegin, "")
+
+	return result
 }
 
 // sendRequest creates and sends an HTTP request to the OpenAI API.
@@ -847,6 +1007,11 @@ func parseToolCallsFromText(text string) ([]openAIToolCall, string) {
 		return nil, ""
 	}
 
+	// First try to parse kimi-k2 format tool calls
+	if toolCalls, remainder := parseKimiK2ToolCalls(text); len(toolCalls) > 0 {
+		return toolCalls, remainder
+	}
+
 	var toolCalls []openAIToolCall
 	var remainder strings.Builder
 	cursor := 0
@@ -907,6 +1072,152 @@ func parseToolCallsFromText(text string) ([]openAIToolCall, string) {
 	}
 
 	return toolCalls, strings.TrimSpace(remainder.String())
+}
+
+// parseKimiK2ToolCalls parses tool calls from kimi-k2 format.
+// Format: <|tool_calls_section_begin|>...<|tool_call_begin|>functions.{func_name}:{idx}<|tool_call_argument_begin|>{args}<|tool_call_end|>...<|tool_calls_section_end|>
+// Returns extracted tool calls and remaining text without the tags.
+func parseKimiK2ToolCalls(text string) ([]openAIToolCall, string) {
+	const (
+		sectionBegin = "<|tool_calls_section_begin|>"
+		sectionEnd   = "<|tool_calls_section_end|>"
+		callBegin    = "<|tool_call_begin|>"
+		callEnd      = "<|tool_call_end|>"
+		argBegin     = "<|tool_call_argument_begin|>"
+	)
+
+	sectionStart := strings.Index(text, sectionBegin)
+	if sectionStart == -1 {
+		return nil, text
+	}
+
+	sectionEndPos := strings.Index(text[sectionStart:], sectionEnd)
+	if sectionEndPos == -1 {
+		return nil, text
+	}
+	sectionEndPos += sectionStart + len(sectionEnd)
+
+	// Extract the section content
+	sectionContent := text[sectionStart+len(sectionBegin) : sectionEndPos-len(sectionEnd)]
+
+	var toolCalls []openAIToolCall
+	var cleanText strings.Builder
+
+	// Process text before the section
+	cleanText.WriteString(text[:sectionStart])
+
+	// Parse tool calls from the section
+	cursor := 0
+	for cursor < len(sectionContent) {
+		callStart := strings.Index(sectionContent[cursor:], callBegin)
+		if callStart == -1 {
+			// No more tool calls, check if there's text content before the end
+			remainingText := strings.TrimSpace(sectionContent[cursor:])
+			if remainingText != "" {
+				// Try to extract text from JSON array format like [{'type': 'text', 'text': '...'}]
+				extractedText := extractTextFromJSONArray(remainingText)
+				if extractedText != "" {
+					cleanText.WriteString(extractedText)
+				} else {
+					// If not JSON format, just add the text (might be malformed)
+					cleanText.WriteString(remainingText)
+				}
+			}
+			break
+		}
+		callStart += cursor
+
+		// Check if there's text content before this tool call
+		textBeforeCall := strings.TrimSpace(sectionContent[cursor:callStart])
+		if textBeforeCall != "" {
+			// Try to extract text from JSON array format
+			extractedText := extractTextFromJSONArray(textBeforeCall)
+			if extractedText != "" {
+				cleanText.WriteString(extractedText)
+			} else {
+				// If not JSON format, might be plain text or malformed
+				// Only add if it doesn't look like incomplete tags
+				if !strings.Contains(textBeforeCall, "<|") {
+					cleanText.WriteString(textBeforeCall)
+				}
+			}
+		}
+
+		callEndPos := strings.Index(sectionContent[callStart:], callEnd)
+		if callEndPos == -1 {
+			break
+		}
+		callEndPos += callStart + len(callEnd)
+
+		// Extract tool call content
+		callContent := sectionContent[callStart+len(callBegin) : callEndPos-len(callEnd)]
+
+		// Find argument begin marker
+		argBeginPos := strings.Index(callContent, argBegin)
+		if argBeginPos == -1 {
+			cursor = callEndPos
+			continue
+		}
+
+		// Extract function ID (format: functions.{func_name}:{idx})
+		funcID := strings.TrimSpace(callContent[:argBeginPos])
+		argsStr := callContent[argBeginPos+len(argBegin):]
+
+		// Parse function name from ID
+		// Format: functions.{func_name}:{idx}
+		var funcName string
+		if strings.HasPrefix(funcID, "functions.") {
+			parts := strings.SplitN(funcID[len("functions."):], ":", 2)
+			if len(parts) > 0 {
+				funcName = parts[0]
+			}
+		}
+
+		if funcName != "" && argsStr != "" {
+			// Validate argsStr is valid JSON
+			var args map[string]any
+			if err := json.Unmarshal([]byte(argsStr), &args); err == nil {
+				callID := "call_" + uuid.New().String()[:8]
+				toolCalls = append(toolCalls, openAIToolCall{
+					ID:   callID,
+					Type: "function",
+					Function: openAIFunctionCall{
+						Name:      funcName,
+						Arguments: argsStr,
+					},
+				})
+			}
+		}
+
+		cursor = callEndPos
+	}
+
+	// Process text after the section
+	cleanText.WriteString(text[sectionEndPos:])
+
+	return toolCalls, strings.TrimSpace(cleanText.String())
+}
+
+// extractTextFromJSONArray extracts text content from JSON array format like [{'type': 'text', 'text': '...'}]
+func extractTextFromJSONArray(text string) string {
+	// Try to parse as JSON array
+	var arr []any
+	if err := json.Unmarshal([]byte(text), &arr); err != nil {
+		return ""
+	}
+
+	var texts []string
+	for _, item := range arr {
+		if itemMap, ok := item.(map[string]any); ok {
+			if itemType, _ := itemMap["type"].(string); itemType == "text" {
+				if itemText, _ := itemMap["text"].(string); itemText != "" {
+					texts = append(texts, itemText)
+				}
+			}
+		}
+	}
+
+	return strings.Join(texts, "")
 }
 
 // mapFinishReason maps OpenAI finish_reason strings to genai.FinishReason values.
