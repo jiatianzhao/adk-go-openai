@@ -575,7 +575,7 @@ func (m *openAIModel) generateStream(ctx context.Context, openaiReq *openAIReque
 				}
 				// 追加写入 data，每次换行
 				if debugFile != nil {
-					fmt.Fprintln(debugFile, data)
+					fmt.Fprintln(debugFile, chunk.Choices)
 				}
 			}
 
@@ -640,7 +640,22 @@ func (m *openAIModel) generateStream(ctx context.Context, openaiReq *openAIReque
 
 			// Handle finish
 			if choice.FinishReason != "" {
-				finalResp := m.buildFinalResponse(textBuffer.String(), toolCalls, usage, choice.FinishReason)
+				text := textBuffer.String()
+				finishReason := choice.FinishReason
+				// Fallback: 检测并修复错误的工具调用格式
+				if len(toolCalls) == 0 && hasMalformedToolCallPattern(text) {
+					parsedCalls, cleanedText := parseMalformedToolCalls(text)
+					if len(parsedCalls) > 0 {
+						toolCalls = parsedCalls
+						textBuffer.Reset()
+						textBuffer.WriteString(cleanedText)
+						// 如果解析出了工具调用,应该将 finish_reason 改为 tool_calls
+						if finishReason == "stop" {
+							finishReason = "tool_calls"
+						}
+					}
+				}
+				finalResp := m.buildFinalResponse(textBuffer.String(), toolCalls, usage, finishReason)
 				yield(finalResp, nil)
 				return
 			}
@@ -662,7 +677,21 @@ func (m *openAIModel) generateStream(ctx context.Context, openaiReq *openAIReque
 		// Fallback: if stream ended without FinishReason but we have accumulated content,
 		// send the final response. This handles non-compliant OpenAI-compatible APIs.
 		if textBuffer.Len() > 0 || len(toolCalls) > 0 {
-			finalResp := m.buildFinalResponse(textBuffer.String(), toolCalls, usage, "stop")
+			text := textBuffer.String()
+			// Fallback: 检测并修复错误的工具调用格式
+			if len(toolCalls) == 0 && hasMalformedToolCallPattern(text) {
+				parsedCalls, cleanedText := parseMalformedToolCalls(text)
+				if len(parsedCalls) > 0 {
+					toolCalls = parsedCalls
+					textBuffer.Reset()
+					textBuffer.WriteString(cleanedText)
+				}
+			}
+			finishReason := "stop"
+			if len(toolCalls) > 0 {
+				finishReason = "tool_calls"
+			}
+			finalResp := m.buildFinalResponse(textBuffer.String(), toolCalls, usage, finishReason)
 			yield(finalResp, nil)
 		}
 	}
@@ -959,6 +988,216 @@ func mapFinishReason(reason string) genai.FinishReason {
 	default:
 		return genai.FinishReasonOther
 	}
+}
+
+// hasMalformedToolCallPattern 检测文本中是否包含错误的工具调用格式
+// 当模型输出 [{'type': 'text', 'text': ' 后跟 <|tool_call_begin|> 等标签时,表示格式错误
+func hasMalformedToolCallPattern(text string) bool {
+	// 检测是否包含错误的文本格式模式
+	hasTextPattern := strings.Contains(text, "[{'type': 'text'") ||
+		strings.Contains(text, "[{\"type\": \"text\"") ||
+		strings.Contains(text, "['type': 'text'") ||
+		strings.Contains(text, "[\"type\": \"text\"")
+
+	// 检测是否包含工具调用标签
+	hasToolCallTags := strings.Contains(text, "<|tool_call_begin|>") ||
+		strings.Contains(text, "<|tool_call_end|>") ||
+		strings.Contains(text, "<|tool_call_argument_begin|>") ||
+		strings.Contains(text, "<|tool_calls_section_end|>")
+
+	return hasTextPattern && hasToolCallTags
+}
+
+// parseMalformedToolCalls 从包含错误格式的文本中解析出工具调用
+// 解析格式: <|tool_call_begin|>functions.function_name:index<|tool_call_argument_begin|>{...}<|tool_call_end|>
+func parseMalformedToolCalls(text string) ([]openAIToolCall, string) {
+	var toolCalls []openAIToolCall
+	var cleanedParts []string
+
+	// 移除开头的错误文本格式模式(如 [{'type': 'text', 'text': '...'}] )
+	text = removeMalformedTextPattern(text)
+
+	// 使用正则表达式或字符串匹配来解析工具调用
+	// 格式: <|tool_call_begin|>functions.function_name:index<|tool_call_argument_begin|>{...}<|tool_call_end|>
+	remaining := text
+	startTag := "<|tool_call_begin|>"
+	endTag := "<|tool_call_end|>"
+	argBeginTag := "<|tool_call_argument_begin|>"
+
+	for {
+		beginIdx := strings.Index(remaining, startTag)
+		if beginIdx == -1 {
+			// 没有更多工具调用,添加剩余文本
+			if len(remaining) > 0 {
+				cleanedParts = append(cleanedParts, remaining)
+			}
+			break
+		}
+
+		// 添加工具调用之前的内容
+		if beginIdx > 0 {
+			beforeText := strings.TrimSpace(remaining[:beginIdx])
+			if beforeText != "" && !strings.HasPrefix(beforeText, "[{") && !strings.HasPrefix(beforeText, "]}") {
+				cleanedParts = append(cleanedParts, beforeText)
+			}
+		}
+
+		// 提取工具调用部分
+		callStart := beginIdx + len(startTag)
+		endIdx := strings.Index(remaining[callStart:], endTag)
+		if endIdx == -1 {
+			// 没有找到结束标签,跳出
+			cleanedParts = append(cleanedParts, remaining[beginIdx:])
+			break
+		}
+
+		callEnd := callStart + endIdx
+		callContent := remaining[callStart:callEnd]
+
+		// 解析函数名和参数
+		argBeginIdx := strings.Index(callContent, argBeginTag)
+		if argBeginIdx == -1 {
+			// 没有参数开始标签,跳过
+			remaining = remaining[callEnd+len(endTag):]
+			continue
+		}
+
+		// 提取函数名部分 (functions.function_name:index)
+		functionNamePart := strings.TrimSpace(callContent[:argBeginIdx])
+		functionName := ""
+		if strings.HasPrefix(functionNamePart, "functions.") {
+			// 移除 functions. 前缀
+			namePart := strings.TrimPrefix(functionNamePart, "functions.")
+			// 提取函数名(可能包含 :index)
+			if colonIdx := strings.Index(namePart, ":"); colonIdx != -1 {
+				functionName = namePart[:colonIdx]
+			} else {
+				functionName = namePart
+			}
+		}
+
+		// 提取参数部分
+		argStart := argBeginIdx + len(argBeginTag)
+		argsStr := strings.TrimSpace(callContent[argStart:])
+
+		// 验证参数是否为有效的 JSON
+		var args map[string]any
+		if err := json.Unmarshal([]byte(argsStr), &args); err == nil && functionName != "" {
+			// 成功解析,创建工具调用
+			callID := "call_" + uuid.New().String()[:8]
+			toolCalls = append(toolCalls, openAIToolCall{
+				ID:   callID,
+				Type: "function",
+				Function: openAIFunctionCall{
+					Name:      functionName,
+					Arguments: argsStr,
+				},
+			})
+		}
+
+		// 继续处理剩余部分
+		remaining = remaining[callEnd+len(endTag):]
+
+		// 移除可能的 <|tool_calls_section_end|> 标签
+		if strings.HasPrefix(remaining, "<|tool_calls_section_end|>") {
+			remaining = strings.TrimPrefix(remaining, "<|tool_calls_section_end|>")
+		}
+	}
+
+	cleanedText := strings.Join(cleanedParts, "\n")
+	return toolCalls, cleanedText
+}
+
+// removeMalformedTextPattern 移除错误的文本格式模式
+// 例如: [{'type': 'text', 'text': '...'}] 或 [{"type": "text", "text": "..."}]
+func removeMalformedTextPattern(text string) string {
+	result := text
+
+	// 处理单引号格式: [{'type': 'text', 'text': '...'}]
+	for {
+		startIdx := strings.Index(result, `[{'type': 'text', 'text': '`)
+		if startIdx == -1 {
+			startIdx = strings.Index(result, `['type': 'text', 'text': '`)
+		}
+		if startIdx == -1 {
+			break
+		}
+
+		// 找到文本开始位置
+		textStart := startIdx
+		var textEnd int = -1
+
+		// 从文本开始位置查找结束位置
+		// 需要找到匹配的 '}] 或 ']
+		searchStart := textStart + len(`[{'type': 'text', 'text': '`)
+		if searchStart > len(result) {
+			searchStart = textStart + len(`['type': 'text', 'text': '`)
+		}
+
+		// 查找结束模式,需要处理转义的单引号
+		for i := searchStart; i < len(result); i++ {
+			if result[i] == '\'' && i+1 < len(result) {
+				if result[i+1] == '}' && i+2 < len(result) && result[i+2] == ']' {
+					textEnd = i + 3
+					break
+				}
+				if result[i+1] == ']' {
+					textEnd = i + 2
+					break
+				}
+			}
+		}
+
+		if textEnd > 0 {
+			result = result[:textStart] + result[textEnd:]
+		} else {
+			break
+		}
+	}
+
+	// 处理双引号格式: [{"type": "text", "text": "..."}]
+	for {
+		startIdx := strings.Index(result, `[{"type": "text", "text": "`)
+		if startIdx == -1 {
+			startIdx = strings.Index(result, `["type": "text", "text": "`)
+		}
+		if startIdx == -1 {
+			break
+		}
+
+		// 找到文本开始位置
+		textStart := startIdx
+		var textEnd int = -1
+
+		// 从文本开始位置查找结束位置
+		// 需要找到匹配的 "}] 或 "]
+		searchStart := textStart + len(`[{"type": "text", "text": "`)
+		if searchStart > len(result) {
+			searchStart = textStart + len(`["type": "text", "text": "`)
+		}
+
+		// 查找结束模式,需要处理转义的双引号
+		for i := searchStart; i < len(result); i++ {
+			if result[i] == '"' && i > 0 && result[i-1] != '\\' {
+				if i+1 < len(result) && result[i+1] == '}' && i+2 < len(result) && result[i+2] == ']' {
+					textEnd = i + 3
+					break
+				}
+				if i+1 < len(result) && result[i+1] == ']' {
+					textEnd = i + 2
+					break
+				}
+			}
+		}
+
+		if textEnd > 0 {
+			result = result[:textStart] + result[textEnd:]
+		} else {
+			break
+		}
+	}
+
+	return result
 }
 
 // maybeAppendUserContent appends a user content, so that model can continue to output.
