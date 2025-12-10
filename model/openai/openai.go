@@ -540,6 +540,9 @@ func (m *openAIModel) generateStream(ctx context.Context, openaiReq *openAIReque
 		var debugFile *os.File
 		var chunkID string
 
+		// 流式过滤器,用于实时检测和过滤错误格式
+		streamFilter := newStreamFilter()
+
 		for scanner.Scan() {
 			line := scanner.Text()
 			if !strings.HasPrefix(line, "data: ") {
@@ -575,7 +578,7 @@ func (m *openAIModel) generateStream(ctx context.Context, openaiReq *openAIReque
 				}
 				// 追加写入 data，每次换行
 				if debugFile != nil {
-					fmt.Fprintln(debugFile, chunk.Choices)
+					fmt.Fprintln(debugFile, fmt.Sprintf("%#v", chunk.Choices))
 				}
 			}
 
@@ -592,19 +595,30 @@ func (m *openAIModel) generateStream(ctx context.Context, openaiReq *openAIReque
 			// Handle text content
 			if delta.Content != nil {
 				if text, ok := delta.Content.(string); ok && text != "" {
-					textBuffer.WriteString(text)
-					// Yield partial response
-					llmResp := &model.LLMResponse{
-						Content: &genai.Content{
-							Role: "model",
-							Parts: []*genai.Part{
-								{Text: text},
-							},
-						},
-						Partial: true,
+					// 使用流式过滤器处理文本内容
+					filteredText, parsedToolCalls := streamFilter.processText(text)
+
+					// 如果解析出了工具调用,添加到工具调用列表
+					if len(parsedToolCalls) > 0 {
+						toolCalls = append(toolCalls, parsedToolCalls...)
 					}
-					if !yield(llmResp, nil) {
-						return
+
+					// 只有过滤后的文本才写入缓冲区和输出
+					if filteredText != "" {
+						textBuffer.WriteString(filteredText)
+						// Yield partial response
+						llmResp := &model.LLMResponse{
+							Content: &genai.Content{
+								Role: "model",
+								Parts: []*genai.Part{
+									{Text: filteredText},
+								},
+							},
+							Partial: true,
+						}
+						if !yield(llmResp, nil) {
+							return
+						}
 					}
 				}
 			}
@@ -640,9 +654,18 @@ func (m *openAIModel) generateStream(ctx context.Context, openaiReq *openAIReque
 
 			// Handle finish
 			if choice.FinishReason != "" {
+				// 处理流式过滤器缓冲区中剩余的内容
+				finalFilteredText, finalParsedToolCalls := streamFilter.flush()
+				if finalFilteredText != "" {
+					textBuffer.WriteString(finalFilteredText)
+				}
+				if len(finalParsedToolCalls) > 0 {
+					toolCalls = append(toolCalls, finalParsedToolCalls...)
+				}
+
 				text := textBuffer.String()
 				finishReason := choice.FinishReason
-				// Fallback: 检测并修复错误的工具调用格式
+				// Fallback: 检测并修复错误的工具调用格式(兼容旧逻辑)
 				if len(toolCalls) == 0 && hasMalformedToolCallPattern(text) {
 					parsedCalls, cleanedText := parseMalformedToolCalls(text)
 					if len(parsedCalls) > 0 {
@@ -654,6 +677,9 @@ func (m *openAIModel) generateStream(ctx context.Context, openaiReq *openAIReque
 							finishReason = "tool_calls"
 						}
 					}
+				} else if len(toolCalls) > 0 && finishReason == "stop" {
+					// 如果流式过滤器解析出了工具调用,应该将 finish_reason 改为 tool_calls
+					finishReason = "tool_calls"
 				}
 				finalResp := m.buildFinalResponse(textBuffer.String(), toolCalls, usage, finishReason)
 				yield(finalResp, nil)
@@ -676,9 +702,18 @@ func (m *openAIModel) generateStream(ctx context.Context, openaiReq *openAIReque
 
 		// Fallback: if stream ended without FinishReason but we have accumulated content,
 		// send the final response. This handles non-compliant OpenAI-compatible APIs.
+		// 处理流式过滤器缓冲区中剩余的内容
+		finalFilteredText, finalParsedToolCalls := streamFilter.flush()
+		if finalFilteredText != "" {
+			textBuffer.WriteString(finalFilteredText)
+		}
+		if len(finalParsedToolCalls) > 0 {
+			toolCalls = append(toolCalls, finalParsedToolCalls...)
+		}
+
 		if textBuffer.Len() > 0 || len(toolCalls) > 0 {
 			text := textBuffer.String()
-			// Fallback: 检测并修复错误的工具调用格式
+			// Fallback: 检测并修复错误的工具调用格式(兼容旧逻辑)
 			if len(toolCalls) == 0 && hasMalformedToolCallPattern(text) {
 				parsedCalls, cleanedText := parseMalformedToolCalls(text)
 				if len(parsedCalls) > 0 {
@@ -1209,5 +1244,216 @@ func (m *openAIModel) maybeAppendUserContent(req *model.LLMRequest) {
 
 	if last := req.Contents[len(req.Contents)-1]; last != nil && last.Role != "user" {
 		req.Contents = append(req.Contents, genai.NewContentFromText("Continue processing previous requests as instructed. Exit or provide a summary if no more outputs are needed.", "user"))
+	}
+}
+
+// streamFilter 流式过滤器,用于实时检测和过滤错误格式
+type streamFilter struct {
+	// 累积缓冲区,用于跨chunk检测
+	buffer strings.Builder
+	// 解析出的工具调用
+	parsedToolCalls []openAIToolCall
+}
+
+const malformedPatternLen = 27 // len(`[{'type': 'text', 'text': '`)
+
+func newStreamFilter() *streamFilter {
+	return &streamFilter{
+		parsedToolCalls: make([]openAIToolCall, 0),
+	}
+}
+
+// flush 处理缓冲区中剩余的内容,返回所有过滤后的文本和工具调用
+func (sf *streamFilter) flush() (string, []openAIToolCall) {
+	if sf.buffer.Len() == 0 {
+		return "", sf.parsedToolCalls[:0]
+	}
+
+	fullText := sf.buffer.String()
+	sf.parsedToolCalls = sf.parsedToolCalls[:0]
+
+	// 处理工具调用标签
+	fullText, toolCalls := sf.processToolCallTags(fullText)
+	sf.parsedToolCalls = append(sf.parsedToolCalls, toolCalls...)
+
+	// 处理错误格式
+	fullText = sf.processMalformedText(fullText)
+
+	sf.buffer.Reset()
+	return fullText, sf.parsedToolCalls
+}
+
+// processText 处理流式文本,返回过滤后的文本和解析出的工具调用
+func (sf *streamFilter) processText(text string) (string, []openAIToolCall) {
+	sf.buffer.WriteString(text)
+	fullText := sf.buffer.String()
+	sf.parsedToolCalls = sf.parsedToolCalls[:0]
+
+	// 先处理工具调用标签
+	fullText, toolCalls := sf.processToolCallTags(fullText)
+	sf.parsedToolCalls = append(sf.parsedToolCalls, toolCalls...)
+
+	// 再处理错误格式
+	fullText = sf.processMalformedText(fullText)
+
+	// 检查是否有未完成的模式需要保留在缓冲区
+	// 保留最后500个字符用于跨chunk检测(足够检测工具调用标签和错误格式)
+	keepLen := 500
+	if len(fullText) <= keepLen {
+		// 内容太少,可能还有未完成的模式,全部保留
+		sf.buffer.Reset()
+		sf.buffer.WriteString(fullText)
+		return "", sf.parsedToolCalls
+	}
+
+	// 检查末尾是否有未完成的模式
+	// 如果末尾包含工具调用标签的开始或错误格式的开始,需要保留更多
+	needsKeep := false
+	suffix := fullText[len(fullText)-keepLen:]
+	if strings.Contains(suffix, "<|tool_call") ||
+		strings.Contains(suffix, "[{'type': 'text'") ||
+		strings.Contains(suffix, `[{"type": "text"`) {
+		// 找到最后一个完整模式的位置
+		lastToolCallEnd := strings.LastIndex(fullText[:len(fullText)-keepLen], "<|tool_call_end|>")
+		lastMalformedEnd := strings.LastIndex(fullText[:len(fullText)-keepLen], "'}]")
+		if lastMalformedEnd == -1 {
+			lastMalformedEnd = strings.LastIndex(fullText[:len(fullText)-keepLen], `"}]`)
+		}
+
+		// 如果末尾有未完成的模式,需要保留
+		if lastToolCallEnd < len(fullText)-keepLen-50 || lastMalformedEnd < len(fullText)-keepLen-50 {
+			needsKeep = true
+		}
+	}
+
+	if needsKeep {
+		// 保留更多内容
+		keepLen = 500
+		if len(fullText) <= keepLen {
+			sf.buffer.Reset()
+			sf.buffer.WriteString(fullText)
+			return "", sf.parsedToolCalls
+		}
+	}
+
+	// 输出可以安全输出的部分
+	output := fullText[:len(fullText)-keepLen]
+	sf.buffer.Reset()
+	sf.buffer.WriteString(fullText[len(fullText)-keepLen:])
+
+	return output, sf.parsedToolCalls
+}
+
+// processMalformedText 处理错误文本格式
+func (sf *streamFilter) processMalformedText(text string) string {
+	result := text
+
+	// 查找并移除 [{'type': 'text', 'text': '...'}]
+	for {
+		idx := strings.Index(result, "[{'type': 'text', 'text': '")
+		if idx == -1 {
+			idx = strings.Index(result, `[{"type": "text", "text": "`)
+		}
+		if idx == -1 {
+			break
+		}
+
+		// 找到对应的结束位置 '}] 或 "}]
+		searchStart := idx + malformedPatternLen
+		endIdx := -1
+
+		// 查找 '}] 模式
+		for i := searchStart; i < len(result)-1; i++ {
+			if result[i] == '}' && result[i+1] == ']' {
+				endIdx = i - 1
+				break
+			}
+		}
+
+		if endIdx > 0 {
+			// 移除整个错误模式
+			result = result[searchStart:endIdx]
+		} else {
+			// 还没接收完,保留(但这种情况应该很少,因为模式已经完整了)
+			break
+		}
+	}
+
+	return result
+}
+
+// processToolCallTags 处理工具调用标签
+func (sf *streamFilter) processToolCallTags(text string) (string, []openAIToolCall) {
+	var toolCalls []openAIToolCall
+	result := text
+
+	for {
+		beginIdx := strings.Index(result, "<|tool_call_begin|>")
+		if beginIdx == -1 {
+			break
+		}
+
+		endIdx := strings.Index(result[beginIdx:], "<|tool_call_end|>")
+		if endIdx == -1 {
+			// 还没接收完
+			break
+		}
+		endIdx += beginIdx
+
+		// 提取工具调用内容
+		callContent := result[beginIdx+len("<|tool_call_begin|>") : endIdx]
+		tc := sf.parseToolCall(callContent)
+		if tc != nil {
+			toolCalls = append(toolCalls, *tc)
+		}
+
+		// 移除工具调用部分
+		result = result[:beginIdx] + result[endIdx+len("<|tool_call_end|>"):]
+
+		index := strings.Index(result, "<|tool_call_end|>")
+		if index > 0 {
+			result = result[:index]
+		}
+	}
+
+	// 移除其他标签
+	//result = strings.ReplaceAll(result, "<|tool_call_argument_begin|>", "")
+	result = strings.ReplaceAll(result, "<|tool_calls_section_end|>", "")
+
+	return result, toolCalls
+}
+
+// parseToolCall 解析工具调用内容
+func (sf *streamFilter) parseToolCall(content string) *openAIToolCall {
+	argBeginIdx := strings.Index(content, "<|tool_call_argument_begin|>")
+	if argBeginIdx == -1 {
+		return nil
+	}
+
+	functionPart := strings.TrimSpace(content[:argBeginIdx])
+	argsPart := strings.TrimSpace(content[argBeginIdx+len("<|tool_call_argument_begin|>"):])
+
+	if !strings.HasPrefix(functionPart, "functions.") {
+		return nil
+	}
+
+	namePart := strings.TrimPrefix(functionPart, "functions.")
+	functionName := namePart
+	if colonIdx := strings.Index(namePart, ":"); colonIdx != -1 {
+		functionName = namePart[:colonIdx]
+	}
+
+	var args map[string]any
+	if err := json.Unmarshal([]byte(argsPart), &args); err != nil {
+		return nil
+	}
+
+	return &openAIToolCall{
+		ID:   "call_" + uuid.New().String()[:8],
+		Type: "function",
+		Function: openAIFunctionCall{
+			Name:      functionName,
+			Arguments: argsPart,
+		},
 	}
 }
