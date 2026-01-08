@@ -898,6 +898,7 @@ func (m *openAIModel) buildFinalResponse(text string, reasoningText string, tool
 		},
 		FinishReason:  mapFinishReason(finishReason),
 		UsageMetadata: buildUsageMetadata(usage),
+		TurnComplete:  true,
 	}
 
 	return llmResp
