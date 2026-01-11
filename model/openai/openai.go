@@ -542,6 +542,8 @@ func (m *openAIModel) generateStream(ctx context.Context, openaiReq *openAIReque
 	openaiReq.Stream = true
 
 	return func(yield func(*model.LLMResponse, error) bool) {
+		writeLog := isDebugFileEnabled()
+
 		httpResp, err := m.sendRequest(ctx, openaiReq)
 		if err != nil {
 			yield(nil, err)
@@ -579,7 +581,7 @@ func (m *openAIModel) generateStream(ctx context.Context, openaiReq *openAIReque
 			}
 
 			// 日志
-			if isDebugFileEnabled() && chunk.ID != "" {
+			if writeLog && chunk.ID != "" {
 				// 第一次获取到 ID 时打开文件
 				if debugFile == nil {
 					chunkID = time.Now().Format("01-02 15:04:05") + "_" + chunk.ID
