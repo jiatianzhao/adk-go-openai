@@ -691,9 +691,9 @@ func (m *openAIModel) generateStream(ctx context.Context, openaiReq *openAIReque
 			}
 
 			// Handle usage
-			//if chunk.Usage != nil {
-			//	usage = chunk.Usage
-			//}
+			if chunk.Usage != nil {
+				usage = chunk.Usage
+			}
 
 			// Handle finish
 			if choice.FinishReason != "" {

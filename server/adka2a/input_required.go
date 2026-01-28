@@ -22,7 +22,7 @@ import (
 	"github.com/a2aproject/a2a-go/a2asrv"
 	"google.golang.org/genai"
 
-	"google.golang.org/adk/session"
+	"github.com/jiatianzhao/adk-go-openai/session"
 )
 
 type inputRequiredProcessor struct {

@@ -21,9 +21,10 @@ import (
 	"iter"
 	"maps"
 	"slices"
-	"strings"
 	"sort"
+	"strings"
 
+	"github.com/jiatianzhao/adk-go-openai/internal/plugininternal/plugincontext"
 	"google.golang.org/genai"
 
 	"github.com/jiatianzhao/adk-go-openai/agent"
@@ -484,13 +485,6 @@ func (f *Flow) handleFunctionCalls(ctx agent.InvocationContext, toolsDict map[st
 			fnResponseEvents = append(fnResponseEvents, ev)
 			continue
 		}
-		funcTool, ok := curTool.(toolinternal.FunctionTool)
-		if !ok {
-			// Return error response event for non-function tools
-			ev := f.createToolTypeErrorEvent(ctx, fnCall, curTool.Name())
-			fnResponseEvents = append(fnResponseEvents, ev)
-			continue
-		}
 		toolCtx := toolinternal.NewToolContext(ctx, fnCall.ID, &session.EventActions{StateDelta: make(map[string]any)})
 
 		spans := telemetry.StartTrace(ctx, "execute_tool "+fnCall.Name)
@@ -673,7 +667,6 @@ func (f *Flow) getAvailableToolNames(toolsDict map[string]tool.Tool) []string {
 	return toolNames
 }
 
-func (f *Flow) invokeBeforeToolCallbacks(tool toolinternal.FunctionTool, fArgs map[string]any, toolCtx tool.Context) (map[string]any, error) {
 func (f *Flow) invokeBeforeToolCallbacks(toolCtx tool.Context, tool tool.Tool, fArgs map[string]any) (map[string]any, error) {
 	for _, callback := range f.BeforeToolCallbacks {
 		result, err := callback(toolCtx, tool, fArgs)
