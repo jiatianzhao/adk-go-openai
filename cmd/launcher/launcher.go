@@ -20,10 +20,11 @@ import (
 
 	"github.com/a2aproject/a2a-go/a2asrv"
 
-	"github.com/jiatianzhao/adk-go-openai/agent"
-	"github.com/jiatianzhao/adk-go-openai/artifact"
-	"github.com/jiatianzhao/adk-go-openai/memory"
-	"github.com/jiatianzhao/adk-go-openai/session"
+	"google.golang.org/adk/agent"
+	"google.golang.org/adk/artifact"
+	"google.golang.org/adk/memory"
+	"google.golang.org/adk/runner"
+	"google.golang.org/adk/session"
 )
 
 // Launcher is the main interface for running an ADK application.
@@ -59,4 +60,5 @@ type Config struct {
 	MemoryService   memory.Service
 	AgentLoader     agent.Loader
 	A2AOptions      []a2asrv.RequestHandlerOption
+	PluginConfig    runner.PluginConfig
 }
