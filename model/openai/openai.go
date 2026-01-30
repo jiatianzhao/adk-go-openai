@@ -35,6 +35,8 @@ import (
 	"google.golang.org/genai"
 )
 
+const EnableThinking = true
+
 // ClientConfig holds configuration for the OpenAI client.
 type ClientConfig struct {
 	// APIKey is the API key for authentication.
@@ -138,17 +140,18 @@ func (m *openAIModel) GenerateContent(ctx context.Context, req *model.LLMRequest
 
 // OpenAI API types
 type openAIRequest struct {
-	Model          string                `json:"model"`
-	Messages       []openAIMessage       `json:"messages"`
-	Tools          []openAITool          `json:"tools,omitempty"`
-	Temperature    *float64              `json:"temperature,omitempty"`
-	MaxTokens      *int                  `json:"max_tokens,omitempty"`
-	TopP           *float64              `json:"top_p,omitempty"`
-	Stop           []string              `json:"stop,omitempty"`
-	Stream         bool                  `json:"stream,omitempty"`
-	ResponseFormat *openAIResponseFormat `json:"response_format,omitempty"`
+	Model              string                   `json:"model"`
+	Messages           []openAIMessage          `json:"messages"`
+	Tools              []openAITool             `json:"tools,omitempty"`
+	Temperature        *float64                 `json:"temperature,omitempty"`
+	MaxTokens          *int                     `json:"max_tokens,omitempty"`
+	TopP               *float64                 `json:"top_p,omitempty"`
+	Stop               []string                 `json:"stop,omitempty"`
+	Stream             bool                     `json:"stream,omitempty"`
+	ResponseFormat     *openAIResponseFormat    `json:"response_format,omitempty"`
+	StreamOptions      openAIStreamOptions      `json:"stream_options,omitempty"`
+	ChatTemplateKwargs openAIChatTemplateKwargs `json:"chat_template_kwargs,omitempty"`
 }
-
 type openAIResponseFormat struct {
 	Type string `json:"type"` // "json_object" or "text"
 }
@@ -211,6 +214,14 @@ type promptTokensDetails struct {
 	CachedTokens int `json:"cached_tokens,omitempty"`
 }
 
+type openAIStreamOptions struct {
+	IncludeUsage bool `json:"include_usage,omitempty"`
+}
+
+type openAIChatTemplateKwargs struct {
+	Thinking bool `json:"thinking"`
+}
+
 // convertRequest converts a model.LLMRequest to OpenAI format
 func (m *openAIModel) convertRequest(req *model.LLMRequest) (*openAIRequest, error) {
 	openaiReq := &openAIRequest{
@@ -271,6 +282,7 @@ func (m *openAIModel) convertRequest(req *model.LLMRequest) (*openAIRequest, err
 		}
 	}
 
+	openaiReq.ChatTemplateKwargs.Thinking = EnableThinking
 	return openaiReq, nil
 }
 
@@ -540,6 +552,7 @@ func (m *openAIModel) generate(ctx context.Context, openaiReq *openAIRequest) it
 // generateStream performs a streaming API call
 func (m *openAIModel) generateStream(ctx context.Context, openaiReq *openAIRequest) iter.Seq2[*model.LLMResponse, error] {
 	openaiReq.Stream = true
+	openaiReq.StreamOptions.IncludeUsage = true // 计费
 
 	return func(yield func(*model.LLMResponse, error) bool) {
 		writeLog := isDebugFileEnabled()
@@ -562,7 +575,7 @@ func (m *openAIModel) generateStream(ctx context.Context, openaiReq *openAIReque
 		var chunkID string
 
 		// fallback
-		var bufferPrefix string // vllm:12版本响应了原始内容，需要过滤
+		var bufferPrefix string
 
 		for scanner.Scan() {
 			line := scanner.Text()
