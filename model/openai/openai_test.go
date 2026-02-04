@@ -1682,9 +1682,9 @@ func TestModel_ResponseWithReasoningContent(t *testing.T) {
 					{
 						Index: 0,
 						Message: &openAIMessage{
-							Role:      "assistant",
-							Content:   "The answer is 42",
-							Reasoning: "Let me think... I need to calculate this carefully.",
+							Role:             "assistant",
+							Content:          "The answer is 42",
+							ReasoningContent: "Let me think... I need to calculate this carefully.",
 						},
 						FinishReason: "stop",
 					},
@@ -1704,7 +1704,7 @@ func TestModel_ResponseWithReasoningContent(t *testing.T) {
 						Message: &openAIMessage{
 							Role:    "assistant",
 							Content: "Final answer",
-							Reasoning: []any{
+							ReasoningContent: []any{
 								"First step of reasoning",
 								"Second step of reasoning",
 							},
@@ -1727,7 +1727,7 @@ func TestModel_ResponseWithReasoningContent(t *testing.T) {
 						Message: &openAIMessage{
 							Role:    "assistant",
 							Content: "Result",
-							Reasoning: map[string]any{
+							ReasoningContent: map[string]any{
 								"text": "Thought process here",
 							},
 						},
