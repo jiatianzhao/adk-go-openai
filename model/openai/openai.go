@@ -613,6 +613,11 @@ func (m *openAIModel) generateStream(ctx context.Context, openaiReq *openAIReque
 			}
 			// 日志over
 
+			// Handle usage
+			if chunk.Usage != nil {
+				usage = chunk.Usage
+			}
+
 			if len(chunk.Choices) == 0 {
 				continue
 			}
@@ -701,11 +706,6 @@ func (m *openAIModel) generateStream(ctx context.Context, openaiReq *openAIReque
 					}
 					toolCalls[targetIdx].Function.Arguments += tc.Function.Arguments
 				}
-			}
-
-			// Handle usage
-			if chunk.Usage != nil {
-				usage = chunk.Usage
 			}
 
 			// Handle finish
