@@ -157,11 +157,11 @@ type openAIResponseFormat struct {
 }
 
 type openAIMessage struct {
-	Role             string           `json:"role"` // system, user, assistant, tool
-	Content          any              `json:"content,omitempty"`
-	ToolCalls        []openAIToolCall `json:"tool_calls,omitempty"`
-	ToolCallID       string           `json:"tool_call_id,omitempty"`
-	ReasoningContent any              `json:"reasoning_content,omitempty"`
+	Role       string           `json:"role"` // system, user, assistant, tool
+	Content    any              `json:"content,omitempty"`
+	ToolCalls  []openAIToolCall `json:"tool_calls,omitempty"`
+	ToolCallID string           `json:"tool_call_id,omitempty"`
+	Reasoning  any              `json:"reasoning,omitempty"`
 }
 
 type openAIToolCall struct {
@@ -613,6 +613,11 @@ func (m *openAIModel) generateStream(ctx context.Context, openaiReq *openAIReque
 			}
 			// 日志over
 
+			// Handle usage, before check len(choices)
+			if chunk.Usage != nil {
+				usage = chunk.Usage
+			}
+
 			if len(chunk.Choices) == 0 {
 				continue
 			}
@@ -624,8 +629,8 @@ func (m *openAIModel) generateStream(ctx context.Context, openaiReq *openAIReque
 			}
 
 			// Handle reasoning content
-			if delta.ReasoningContent != nil {
-				if text, ok := delta.ReasoningContent.(string); ok && text != "" {
+			if delta.Reasoning != nil {
+				if text, ok := delta.Reasoning.(string); ok && text != "" {
 					reasoningBuffer.WriteString(text)
 					// Yield partial response with Thought: true
 					llmResp := &model.LLMResponse{
@@ -701,11 +706,6 @@ func (m *openAIModel) generateStream(ctx context.Context, openaiReq *openAIReque
 					}
 					toolCalls[targetIdx].Function.Arguments += tc.Function.Arguments
 				}
-			}
-
-			// Handle usage
-			if chunk.Usage != nil {
-				usage = chunk.Usage
 			}
 
 			// Handle finish
@@ -822,7 +822,7 @@ func (m *openAIModel) convertResponse(resp *openAIResponse) (*model.LLMResponse,
 	var parts []*genai.Part
 
 	// Handle reasoning content (thought process) - prepend before regular content
-	if reasoningParts := extractReasoningParts(msg.ReasoningContent); len(reasoningParts) > 0 {
+	if reasoningParts := extractReasoningParts(msg.Reasoning); len(reasoningParts) > 0 {
 		parts = append(parts, reasoningParts...)
 	}
 
@@ -938,13 +938,13 @@ func buildUsageMetadata(usage *openAIUsage) *genai.GenerateContentResponseUsageM
 
 // extractReasoningParts extracts reasoning/thought content from provider-specific payloads.
 // It converts various reasoning formats (string, list, map) into genai.Part with Thought=true.
-func extractReasoningParts(reasoningContent any) []*genai.Part {
-	if reasoningContent == nil {
+func extractReasoningParts(reasoning any) []*genai.Part {
+	if reasoning == nil {
 		return nil
 	}
 
 	var parts []*genai.Part
-	extractTexts(reasoningContent, &parts)
+	extractTexts(reasoning, &parts)
 	return parts
 }
 
@@ -965,7 +965,7 @@ func extractTexts(value any, parts *[]*genai.Part) {
 		}
 	case map[string]any:
 		// LiteLLM/OpenAI nests reasoning text under known keys
-		for _, key := range []string{"text", "content", "reasoning", "reasoning_content"} {
+		for _, key := range []string{"text", "content", "reasoning"} {
 			if text, ok := v[key].(string); ok && text != "" {
 				*parts = append(*parts, &genai.Part{Text: text, Thought: true})
 			}
