@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	"google.golang.org/adk/agent"
+	"github.com/jiatianzhao/adk-go-openai/agent"
 )
 
 type Map map[string]agent.Agent

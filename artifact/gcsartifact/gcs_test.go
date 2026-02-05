@@ -27,8 +27,8 @@ import (
 	"cloud.google.com/go/storage"
 	"google.golang.org/api/iterator"
 
-	"google.golang.org/adk/artifact"
-	"google.golang.org/adk/internal/artifact/tests"
+	"github.com/jiatianzhao/adk-go-openai/artifact"
+	"github.com/jiatianzhao/adk-go-openai/internal/artifact/tests"
 )
 
 // newGCSArtifactServiceForTesting creates a gcsService for the specified bucket using a mocked inmemory client

@@ -19,7 +19,7 @@ package telemetry
 import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
-	internaltelemetry "google.golang.org/adk/internal/telemetry"
+	internaltelemetry "github.com/jiatianzhao/adk-go-openai/internal/telemetry"
 )
 
 // RegisterSpanProcessor registers the span processor to local trace provider instance.

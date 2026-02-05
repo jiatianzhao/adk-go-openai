@@ -20,7 +20,7 @@ import (
 
 	"google.golang.org/genai"
 
-	"google.golang.org/adk/tool/toolconfirmation"
+	"github.com/jiatianzhao/adk-go-openai/tool/toolconfirmation"
 )
 
 // --- The Test Suite ---

@@ -23,8 +23,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"google.golang.org/adk/internal/sessioninternal"
-	"google.golang.org/adk/session"
+	"github.com/jiatianzhao/adk-go-openai/internal/sessioninternal"
+	"github.com/jiatianzhao/adk-go-openai/session"
 )
 
 func createMutableSession(ctx context.Context, t *testing.T, sessionID string, initialData map[string]any) (*sessioninternal.MutableSession, session.Service) {

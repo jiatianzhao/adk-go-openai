@@ -36,7 +36,7 @@ import (
 	"google.golang.org/api/option"
 	"google.golang.org/genai"
 
-	"google.golang.org/adk/artifact"
+	"github.com/jiatianzhao/adk-go-openai/artifact"
 )
 
 // gcsService is a google cloud storage implementation of the Service.

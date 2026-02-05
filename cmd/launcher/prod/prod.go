@@ -18,11 +18,11 @@
 package prod
 
 import (
-	"google.golang.org/adk/cmd/launcher"
-	"google.golang.org/adk/cmd/launcher/universal"
-	"google.golang.org/adk/cmd/launcher/web"
-	"google.golang.org/adk/cmd/launcher/web/a2a"
-	"google.golang.org/adk/cmd/launcher/web/api"
+	"github.com/jiatianzhao/adk-go-openai/cmd/launcher"
+	"github.com/jiatianzhao/adk-go-openai/cmd/launcher/universal"
+	"github.com/jiatianzhao/adk-go-openai/cmd/launcher/web"
+	"github.com/jiatianzhao/adk-go-openai/cmd/launcher/web/a2a"
+	"github.com/jiatianzhao/adk-go-openai/cmd/launcher/web/api"
 )
 
 // NewLauncher returns a launcher capable of serving ADK REST API and A2A.

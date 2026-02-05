@@ -16,8 +16,8 @@
 package main
 
 import (
-	_ "google.golang.org/adk/cmd/adkgo/internal/deploy/cloudrun"
-	"google.golang.org/adk/cmd/adkgo/internal/root"
+	_ "github.com/jiatianzhao/adk-go-openai/cmd/adkgo/internal/deploy/cloudrun"
+	"github.com/jiatianzhao/adk-go-openai/cmd/adkgo/internal/root"
 )
 
 func main() {

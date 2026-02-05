@@ -25,10 +25,10 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"google.golang.org/adk/cmd/launcher"
-	weblauncher "google.golang.org/adk/cmd/launcher/web"
-	"google.golang.org/adk/internal/cli/util"
-	"google.golang.org/adk/server/adkrest/controllers"
+	"github.com/jiatianzhao/adk-go-openai/cmd/launcher"
+	weblauncher "github.com/jiatianzhao/adk-go-openai/cmd/launcher/web"
+	"github.com/jiatianzhao/adk-go-openai/internal/cli/util"
+	"github.com/jiatianzhao/adk-go-openai/server/adkrest/controllers"
 )
 
 // webUIConfig contains parameters for launching ADK Web UI

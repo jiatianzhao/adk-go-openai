@@ -1,4 +1,4 @@
-module google.golang.org/adk
+module github.com/jiatianzhao/adk-go-openai
 
 go 1.24.4
 

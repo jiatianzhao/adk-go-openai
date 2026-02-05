@@ -17,7 +17,7 @@ package routers
 import (
 	"net/http"
 
-	"google.golang.org/adk/server/adkrest/controllers"
+	"github.com/jiatianzhao/adk-go-openai/server/adkrest/controllers"
 )
 
 // SessionsAPIRouter defines the routes for the Sessions API.

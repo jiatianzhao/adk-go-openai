@@ -21,7 +21,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
-	"google.golang.org/adk/agent"
+	"github.com/jiatianzhao/adk-go-openai/agent"
 )
 
 func TestReadonlyContext(t *testing.T) {

@@ -17,8 +17,8 @@ package memory
 import (
 	"context"
 
-	"google.golang.org/adk/memory"
-	"google.golang.org/adk/session"
+	"github.com/jiatianzhao/adk-go-openai/memory"
+	"github.com/jiatianzhao/adk-go-openai/session"
 )
 
 type Memory struct {
