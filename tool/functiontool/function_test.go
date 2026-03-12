@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"iter"
-	"net/http"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -29,18 +28,17 @@ import (
 	"github.com/google/jsonschema-go/jsonschema"
 	"google.golang.org/genai"
 
-	"github.com/jiatianzhao/adk-go-openai/agent/llmagent"
-	icontext "github.com/jiatianzhao/adk-go-openai/internal/context"
-	"github.com/jiatianzhao/adk-go-openai/internal/httprr"
-	"github.com/jiatianzhao/adk-go-openai/internal/testutil"
-	"github.com/jiatianzhao/adk-go-openai/internal/toolinternal"
-	"github.com/jiatianzhao/adk-go-openai/internal/typeutil"
-	"github.com/jiatianzhao/adk-go-openai/model"
-	"github.com/jiatianzhao/adk-go-openai/model/gemini"
-	"github.com/jiatianzhao/adk-go-openai/session"
-	"github.com/jiatianzhao/adk-go-openai/tool"
-	"github.com/jiatianzhao/adk-go-openai/tool/functiontool"
-	"github.com/jiatianzhao/adk-go-openai/tool/toolconfirmation"
+	"google.golang.org/adk/agent/llmagent"
+	icontext "google.golang.org/adk/internal/context"
+	"google.golang.org/adk/internal/testutil"
+	"google.golang.org/adk/internal/toolinternal"
+	"google.golang.org/adk/internal/typeutil"
+	"google.golang.org/adk/model"
+	"google.golang.org/adk/model/gemini"
+	"google.golang.org/adk/session"
+	"google.golang.org/adk/tool"
+	"google.golang.org/adk/tool/functiontool"
+	"google.golang.org/adk/tool/toolconfirmation"
 )
 
 type SumArgs struct {
@@ -71,14 +69,14 @@ func createToolContext(t *testing.T) tool.Context {
 	return toolinternal.NewToolContext(invCtx, "", &session.EventActions{}, nil)
 }
 
-//go:generate go test -httprecord=.*
+//go:generate go test -v -httprecord=.*
 
 func TestFunctionTool_Simple(t *testing.T) {
 	ctx := t.Context()
 	// TODO: this model creation code was copied from model/genai_test.go. Refactor so both tests can share.
-	modelName := "gemini-2.0-flash"
+	modelName := "gemini-2.5-flash"
 	replayTrace := filepath.Join("testdata", t.Name()+".httprr")
-	cfg := newGeminiTestClientConfig(t, replayTrace)
+	cfg := testutil.NewGeminiTestClientConfig(t, replayTrace)
 	m, err := gemini.NewModel(ctx, modelName, cfg)
 	if err != nil {
 		t.Fatalf("model.NewGeminiModel(%q) failed: %v", modelName, err)
@@ -379,23 +377,6 @@ func TestFunctionTool_MapInput(t *testing.T) {
 	want := Output{Sum: 5}
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("sumTool.Run returned unexpected result (-want +got):\n%s", diff)
-	}
-}
-
-// newGeminiTestClientConfig returns the genai.ClientConfig configured for record and replay.
-func newGeminiTestClientConfig(t *testing.T, rrfile string) *genai.ClientConfig {
-	t.Helper()
-	rr, err := testutil.NewGeminiTransport(rrfile)
-	if err != nil {
-		t.Fatal(err)
-	}
-	apiKey := ""
-	if recording, _ := httprr.Recording(rrfile); !recording {
-		apiKey = "fakekey"
-	}
-	return &genai.ClientConfig{
-		HTTPClient: &http.Client{Transport: rr},
-		APIKey:     apiKey,
 	}
 }
 

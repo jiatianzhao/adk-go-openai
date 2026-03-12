@@ -23,15 +23,16 @@ import (
 
 	"google.golang.org/genai"
 
-	"github.com/jiatianzhao/adk-go-openai/agent"
-	"github.com/jiatianzhao/adk-go-openai/agent/llmagent"
-	"github.com/jiatianzhao/adk-go-openai/cmd/launcher"
-	"github.com/jiatianzhao/adk-go-openai/cmd/launcher/full"
-	"github.com/jiatianzhao/adk-go-openai/model/gemini"
-	"github.com/jiatianzhao/adk-go-openai/tool"
-	"github.com/jiatianzhao/adk-go-openai/tool/agenttool"
-	"github.com/jiatianzhao/adk-go-openai/tool/functiontool"
-	"github.com/jiatianzhao/adk-go-openai/tool/geminitool"
+	"google.golang.org/adk/agent"
+	"google.golang.org/adk/agent/llmagent"
+	"google.golang.org/adk/cmd/launcher"
+	"google.golang.org/adk/cmd/launcher/full"
+	"google.golang.org/adk/model/gemini"
+	"google.golang.org/adk/telemetry"
+	"google.golang.org/adk/tool"
+	"google.golang.org/adk/tool/agenttool"
+	"google.golang.org/adk/tool/functiontool"
+	"google.golang.org/adk/tool/geminitool"
 )
 
 // Package main demonstrates a workaround for using multiple tool types (e.g.,
@@ -108,6 +109,9 @@ func main() {
 
 	config := &launcher.Config{
 		AgentLoader: agent.NewSingleLoader(a),
+		TelemetryOptions: []telemetry.Option{
+			telemetry.WithGenAICaptureMessageContent(true),
+		},
 	}
 
 	l := full.NewLauncher()
