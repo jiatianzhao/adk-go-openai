@@ -26,7 +26,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.36.0"
 	"go.opentelemetry.io/otel/trace"
 
-	"google.golang.org/adk/internal/telemetry"
+	"github.com/jiatianzhao/adk-go-openai/internal/telemetry"
 )
 
 const eventIDKey = "gcp.vertex.agent.event_id"

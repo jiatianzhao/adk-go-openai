@@ -29,17 +29,17 @@ import (
 
 	"google.golang.org/genai"
 
-	"google.golang.org/adk/agent"
-	"google.golang.org/adk/agent/llmagent"
-	"google.golang.org/adk/agent/workflowagents/loopagent"
-	"google.golang.org/adk/agent/workflowagents/parallelagent"
-	"google.golang.org/adk/agent/workflowagents/sequentialagent"
-	"google.golang.org/adk/tool"
-	"google.golang.org/adk/tool/agenttool"
-	"google.golang.org/adk/tool/exampletool"
-	"google.golang.org/adk/tool/exitlooptool"
-	"google.golang.org/adk/tool/geminitool"
-	"google.golang.org/adk/tool/mcptoolset"
+	"github.com/jiatianzhao/adk-go-openai/agent"
+	"github.com/jiatianzhao/adk-go-openai/agent/llmagent"
+	"github.com/jiatianzhao/adk-go-openai/agent/workflowagents/loopagent"
+	"github.com/jiatianzhao/adk-go-openai/agent/workflowagents/parallelagent"
+	"github.com/jiatianzhao/adk-go-openai/agent/workflowagents/sequentialagent"
+	"github.com/jiatianzhao/adk-go-openai/tool"
+	"github.com/jiatianzhao/adk-go-openai/tool/agenttool"
+	"github.com/jiatianzhao/adk-go-openai/tool/exampletool"
+	"github.com/jiatianzhao/adk-go-openai/tool/exitlooptool"
+	"github.com/jiatianzhao/adk-go-openai/tool/geminitool"
+	"github.com/jiatianzhao/adk-go-openai/tool/mcptoolset"
 )
 
 type AgentFactory func(ctx context.Context, configBytes []byte, configPath string) (agent.Agent, error)

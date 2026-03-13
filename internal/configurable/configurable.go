@@ -21,14 +21,14 @@ import (
 
 	"google.golang.org/genai"
 
-	"google.golang.org/adk/agent"
-	"google.golang.org/adk/agent/llmagent"
-	"google.golang.org/adk/agent/workflowagents/loopagent"
-	"google.golang.org/adk/agent/workflowagents/parallelagent"
-	"google.golang.org/adk/agent/workflowagents/sequentialagent"
-	"google.golang.org/adk/internal/llminternal/googlellm"
-	"google.golang.org/adk/model/gemini"
-	"google.golang.org/adk/tool"
+	"github.com/jiatianzhao/adk-go-openai/agent"
+	"github.com/jiatianzhao/adk-go-openai/agent/llmagent"
+	"github.com/jiatianzhao/adk-go-openai/agent/workflowagents/loopagent"
+	"github.com/jiatianzhao/adk-go-openai/agent/workflowagents/parallelagent"
+	"github.com/jiatianzhao/adk-go-openai/agent/workflowagents/sequentialagent"
+	"github.com/jiatianzhao/adk-go-openai/internal/llminternal/googlellm"
+	"github.com/jiatianzhao/adk-go-openai/model/gemini"
+	"github.com/jiatianzhao/adk-go-openai/tool"
 )
 
 // codeConfig represents a reference to a function or callback.

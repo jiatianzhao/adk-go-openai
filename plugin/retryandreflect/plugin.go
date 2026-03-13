@@ -28,8 +28,8 @@ import (
 	"sync"
 	"text/template"
 
-	"google.golang.org/adk/plugin"
-	"google.golang.org/adk/tool"
+	"github.com/jiatianzhao/adk-go-openai/plugin"
+	"github.com/jiatianzhao/adk-go-openai/tool"
 
 	_ "embed"
 )

@@ -28,17 +28,17 @@ import (
 	"github.com/google/jsonschema-go/jsonschema"
 	"google.golang.org/genai"
 
-	"google.golang.org/adk/agent/llmagent"
-	icontext "google.golang.org/adk/internal/context"
-	"google.golang.org/adk/internal/testutil"
-	"google.golang.org/adk/internal/toolinternal"
-	"google.golang.org/adk/internal/typeutil"
-	"google.golang.org/adk/model"
-	"google.golang.org/adk/model/gemini"
-	"google.golang.org/adk/session"
-	"google.golang.org/adk/tool"
-	"google.golang.org/adk/tool/functiontool"
-	"google.golang.org/adk/tool/toolconfirmation"
+	"github.com/jiatianzhao/adk-go-openai/agent/llmagent"
+	icontext "github.com/jiatianzhao/adk-go-openai/internal/context"
+	"github.com/jiatianzhao/adk-go-openai/internal/testutil"
+	"github.com/jiatianzhao/adk-go-openai/internal/toolinternal"
+	"github.com/jiatianzhao/adk-go-openai/internal/typeutil"
+	"github.com/jiatianzhao/adk-go-openai/model"
+	"github.com/jiatianzhao/adk-go-openai/model/gemini"
+	"github.com/jiatianzhao/adk-go-openai/session"
+	"github.com/jiatianzhao/adk-go-openai/tool"
+	"github.com/jiatianzhao/adk-go-openai/tool/functiontool"
+	"github.com/jiatianzhao/adk-go-openai/tool/toolconfirmation"
 )
 
 type SumArgs struct {

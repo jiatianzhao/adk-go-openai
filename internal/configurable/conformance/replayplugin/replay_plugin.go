@@ -45,13 +45,13 @@ import (
 	"google.golang.org/genai"
 	"gopkg.in/yaml.v3"
 
-	"google.golang.org/adk/agent"
-	"google.golang.org/adk/internal/configurable/conformance/replayplugin/recording"
-	"google.golang.org/adk/internal/toolinternal"
-	"google.golang.org/adk/model"
-	"google.golang.org/adk/plugin"
-	"google.golang.org/adk/session"
-	"google.golang.org/adk/tool"
+	"github.com/jiatianzhao/adk-go-openai/agent"
+	"github.com/jiatianzhao/adk-go-openai/internal/configurable/conformance/replayplugin/recording"
+	"github.com/jiatianzhao/adk-go-openai/internal/toolinternal"
+	"github.com/jiatianzhao/adk-go-openai/model"
+	"github.com/jiatianzhao/adk-go-openai/plugin"
+	"github.com/jiatianzhao/adk-go-openai/session"
+	"github.com/jiatianzhao/adk-go-openai/tool"
 )
 
 // New creates an instance of the replay plugin.

@@ -146,6 +146,8 @@ type openAIRequest struct {
 	Temperature        *float64                 `json:"temperature,omitempty"`
 	MaxTokens          *int                     `json:"max_tokens,omitempty"`
 	TopP               *float64                 `json:"top_p,omitempty"`
+	FrequencyPenalty   *float32                 `json:"frequency_penalty,omitempty"`
+	PresencePenalty    *float32                 `json:"presence_penalty,omitempty"`
 	Stop               []string                 `json:"stop,omitempty"`
 	Stream             bool                     `json:"stream,omitempty"`
 	ResponseFormat     *openAIResponseFormat    `json:"response_format,omitempty"`
@@ -276,6 +278,12 @@ func (m *openAIModel) convertRequest(req *model.LLMRequest) (*openAIRequest, err
 		}
 		if len(req.Config.StopSequences) > 0 {
 			openaiReq.Stop = req.Config.StopSequences
+		}
+		if req.Config.FrequencyPenalty != nil {
+			openaiReq.FrequencyPenalty = req.Config.FrequencyPenalty
+		}
+		if req.Config.PresencePenalty != nil {
+			openaiReq.PresencePenalty = req.Config.PresencePenalty
 		}
 		if req.Config.ResponseMIMEType == "application/json" {
 			openaiReq.ResponseFormat = &openAIResponseFormat{Type: "json_object"}

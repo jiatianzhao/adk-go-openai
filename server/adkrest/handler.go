@@ -20,11 +20,11 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"google.golang.org/adk/cmd/launcher"
-	"google.golang.org/adk/server/adkrest/controllers"
-	"google.golang.org/adk/server/adkrest/internal/routers"
-	"google.golang.org/adk/server/adkrest/internal/services"
-	"google.golang.org/adk/telemetry"
+	"github.com/jiatianzhao/adk-go-openai/cmd/launcher"
+	"github.com/jiatianzhao/adk-go-openai/server/adkrest/controllers"
+	"github.com/jiatianzhao/adk-go-openai/server/adkrest/internal/routers"
+	"github.com/jiatianzhao/adk-go-openai/server/adkrest/internal/services"
+	"github.com/jiatianzhao/adk-go-openai/telemetry"
 )
 
 // NewHandler creates and returns an http.Handler for the ADK REST API.

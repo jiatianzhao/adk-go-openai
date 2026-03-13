@@ -21,16 +21,16 @@ import (
 
 	"google.golang.org/genai"
 
-	"google.golang.org/adk/agent"
-	"google.golang.org/adk/internal/toolinternal"
-	"google.golang.org/adk/memory"
-	"google.golang.org/adk/session"
-	"google.golang.org/adk/tool"
-	"google.golang.org/adk/tool/agenttool"
-	"google.golang.org/adk/tool/functiontool"
-	"google.golang.org/adk/tool/geminitool"
-	"google.golang.org/adk/tool/loadartifactstool"
-	"google.golang.org/adk/tool/toolconfirmation"
+	"github.com/jiatianzhao/adk-go-openai/agent"
+	"github.com/jiatianzhao/adk-go-openai/internal/toolinternal"
+	"github.com/jiatianzhao/adk-go-openai/memory"
+	"github.com/jiatianzhao/adk-go-openai/session"
+	"github.com/jiatianzhao/adk-go-openai/tool"
+	"github.com/jiatianzhao/adk-go-openai/tool/agenttool"
+	"github.com/jiatianzhao/adk-go-openai/tool/functiontool"
+	"github.com/jiatianzhao/adk-go-openai/tool/geminitool"
+	"github.com/jiatianzhao/adk-go-openai/tool/loadartifactstool"
+	"github.com/jiatianzhao/adk-go-openai/tool/toolconfirmation"
 )
 
 func TestTypes(t *testing.T) {

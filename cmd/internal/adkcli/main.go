@@ -22,14 +22,14 @@ import (
 	"os"
 	"path/filepath"
 
-	"google.golang.org/adk/agent"
-	"google.golang.org/adk/cmd/launcher"
-	"google.golang.org/adk/cmd/launcher/full"
-	"google.golang.org/adk/internal/configurable"
-	"google.golang.org/adk/internal/configurable/conformance"
-	"google.golang.org/adk/internal/configurable/conformance/replayplugin"
-	"google.golang.org/adk/plugin"
-	"google.golang.org/adk/runner"
+	"github.com/jiatianzhao/adk-go-openai/agent"
+	"github.com/jiatianzhao/adk-go-openai/cmd/launcher"
+	"github.com/jiatianzhao/adk-go-openai/cmd/launcher/full"
+	"github.com/jiatianzhao/adk-go-openai/internal/configurable"
+	"github.com/jiatianzhao/adk-go-openai/internal/configurable/conformance"
+	"github.com/jiatianzhao/adk-go-openai/internal/configurable/conformance/replayplugin"
+	"github.com/jiatianzhao/adk-go-openai/plugin"
+	"github.com/jiatianzhao/adk-go-openai/runner"
 )
 
 func main() {

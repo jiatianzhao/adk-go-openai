@@ -21,7 +21,7 @@ import (
 
 	"google.golang.org/genai"
 
-	"google.golang.org/adk/model"
+	"github.com/jiatianzhao/adk-go-openai/model"
 )
 
 var geminiModelVersionRegex = regexp.MustCompile(`^gemini-(\d+(\.\d+)?)`)

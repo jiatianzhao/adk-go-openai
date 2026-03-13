@@ -17,7 +17,7 @@ package recording
 import (
 	"google.golang.org/genai"
 
-	"google.golang.org/adk/model"
+	"github.com/jiatianzhao/adk-go-openai/model"
 )
 
 // Recordings represents all recordings in chronological order.

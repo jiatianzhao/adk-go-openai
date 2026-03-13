@@ -19,10 +19,10 @@ import (
 	"iter"
 	"strings"
 
-	"google.golang.org/adk/agent"
-	"google.golang.org/adk/internal/utils"
-	"google.golang.org/adk/model"
-	"google.golang.org/adk/session"
+	"github.com/jiatianzhao/adk-go-openai/agent"
+	"github.com/jiatianzhao/adk-go-openai/internal/utils"
+	"github.com/jiatianzhao/adk-go-openai/model"
+	"github.com/jiatianzhao/adk-go-openai/session"
 )
 
 // identityRequestProcessor gives the agent identity from the framework.

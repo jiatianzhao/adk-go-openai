@@ -21,9 +21,9 @@ import (
 
 	"google.golang.org/genai"
 
-	"google.golang.org/adk/internal/utils"
-	"google.golang.org/adk/model"
-	"google.golang.org/adk/tool"
+	"github.com/jiatianzhao/adk-go-openai/internal/utils"
+	"github.com/jiatianzhao/adk-go-openai/model"
+	"github.com/jiatianzhao/adk-go-openai/tool"
 )
 
 type Example struct {

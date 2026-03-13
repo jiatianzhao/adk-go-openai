@@ -22,17 +22,17 @@ import (
 
 	"google.golang.org/genai"
 
-	"google.golang.org/adk/agent"
-	"google.golang.org/adk/agent/llmagent"
-	"google.golang.org/adk/internal/testutil"
-	"google.golang.org/adk/model/gemini"
-	"google.golang.org/adk/plugin"
-	"google.golang.org/adk/plugin/functioncallmodifier"
-	"google.golang.org/adk/runner"
-	"google.golang.org/adk/session"
-	"google.golang.org/adk/tool"
-	"google.golang.org/adk/tool/agenttool"
-	"google.golang.org/adk/tool/functiontool"
+	"github.com/jiatianzhao/adk-go-openai/agent"
+	"github.com/jiatianzhao/adk-go-openai/agent/llmagent"
+	"github.com/jiatianzhao/adk-go-openai/internal/testutil"
+	"github.com/jiatianzhao/adk-go-openai/model/gemini"
+	"github.com/jiatianzhao/adk-go-openai/plugin"
+	"github.com/jiatianzhao/adk-go-openai/plugin/functioncallmodifier"
+	"github.com/jiatianzhao/adk-go-openai/runner"
+	"github.com/jiatianzhao/adk-go-openai/session"
+	"github.com/jiatianzhao/adk-go-openai/tool"
+	"github.com/jiatianzhao/adk-go-openai/tool/agenttool"
+	"github.com/jiatianzhao/adk-go-openai/tool/functiontool"
 )
 
 //go:generate go test -v -httprecord=testdata/.*\.httprr

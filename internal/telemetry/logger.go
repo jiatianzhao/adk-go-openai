@@ -25,8 +25,8 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.36.0"
 	"google.golang.org/genai"
 
-	"google.golang.org/adk/internal/version"
-	"google.golang.org/adk/model"
+	"github.com/jiatianzhao/adk-go-openai/internal/version"
+	"github.com/jiatianzhao/adk-go-openai/model"
 )
 
 // genAICaptureMessageContent is true if message content should be elided. False by default.

@@ -19,7 +19,7 @@ import (
 
 	"google.golang.org/genai"
 
-	"google.golang.org/adk/model"
+	"github.com/jiatianzhao/adk-go-openai/model"
 )
 
 func TestIsGemini25OrLower(t *testing.T) {

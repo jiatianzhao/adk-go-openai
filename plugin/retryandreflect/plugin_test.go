@@ -19,7 +19,7 @@ import (
 	"strings"
 	"testing"
 
-	"google.golang.org/adk/tool"
+	"github.com/jiatianzhao/adk-go-openai/tool"
 )
 
 type mockTool struct {
