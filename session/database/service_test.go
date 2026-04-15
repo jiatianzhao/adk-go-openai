@@ -20,8 +20,8 @@ import (
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 
-	"google.golang.org/adk/session"
-	"google.golang.org/adk/session/session_test"
+	"github.com/jiatianzhao/adk-go-openai/session"
+	"github.com/jiatianzhao/adk-go-openai/session/session_test"
 )
 
 func Test_databaseService(t *testing.T) {

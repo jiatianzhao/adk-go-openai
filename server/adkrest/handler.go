@@ -23,14 +23,14 @@ import (
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 	"go.opentelemetry.io/otel/sdk/trace"
 
-	"google.golang.org/adk/agent"
-	"google.golang.org/adk/artifact"
-	"google.golang.org/adk/memory"
-	"google.golang.org/adk/runner"
-	"google.golang.org/adk/server/adkrest/controllers"
-	"google.golang.org/adk/server/adkrest/internal/routers"
-	"google.golang.org/adk/server/adkrest/internal/services"
-	"google.golang.org/adk/session"
+	"github.com/jiatianzhao/adk-go-openai/agent"
+	"github.com/jiatianzhao/adk-go-openai/artifact"
+	"github.com/jiatianzhao/adk-go-openai/memory"
+	"github.com/jiatianzhao/adk-go-openai/runner"
+	"github.com/jiatianzhao/adk-go-openai/server/adkrest/controllers"
+	"github.com/jiatianzhao/adk-go-openai/server/adkrest/internal/routers"
+	"github.com/jiatianzhao/adk-go-openai/server/adkrest/internal/services"
+	"github.com/jiatianzhao/adk-go-openai/session"
 )
 
 // NewServer creates a new ADK REST API server which implements [http.Handler] interface.

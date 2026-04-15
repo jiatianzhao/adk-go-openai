@@ -164,6 +164,7 @@ type openAIMessage struct {
 	ToolCalls        []openAIToolCall `json:"tool_calls,omitempty"`
 	ToolCallID       string           `json:"tool_call_id,omitempty"`
 	ReasoningContent any              `json:"reasoning_content,omitempty"`
+	Reasoning        any              `json:"reasoning,omitempty"`
 }
 
 type openAIToolCall struct {
@@ -645,25 +646,24 @@ func (m *openAIModel) generateStream(ctx context.Context, openaiReq *openAIReque
 				continue
 			}
 
-			// Handle reasoning content
-			if delta.ReasoningContent != nil {
-				if text, ok := delta.ReasoningContent.(string); ok && text != "" {
-					reasoningBuffer.WriteString(text)
-					llmResp := &model.LLMResponse{
-						Content: &genai.Content{
-							Role: "model",
-							Parts: []*genai.Part{
-								{
-									Text:    text,
-									Thought: true, // thought!
-								},
+			// Handle reasoning content (supports both reasoning_content and reasoning fields)
+			reasoningText := extractReasoningText(delta.ReasoningContent, delta.Reasoning)
+			if reasoningText != "" {
+				reasoningBuffer.WriteString(reasoningText)
+				llmResp := &model.LLMResponse{
+					Content: &genai.Content{
+						Role: "model",
+						Parts: []*genai.Part{
+							{
+								Text:    reasoningText,
+								Thought: true, // thought!
 							},
 						},
-						Partial: true,
-					}
-					if !yield(llmResp, nil) {
-						return
-					}
+					},
+					Partial: true,
+				}
+				if !yield(llmResp, nil) {
+					return
 				}
 			}
 
@@ -941,6 +941,20 @@ func buildUsageMetadata(usage *openAIUsage) *genai.GenerateContentResponseUsageM
 		metadata.CachedContentTokenCount = int32(usage.PromptTokensDetails.CachedTokens)
 	}
 	return metadata
+}
+
+// extractReasoningText extracts text from multiple reasoning fields, returning the first non-empty one.
+// This supports providers that use either "reasoning_content" or "reasoning" in their responses.
+func extractReasoningText(values ...any) string {
+	for _, v := range values {
+		if v == nil {
+			continue
+		}
+		if text, ok := v.(string); ok && text != "" {
+			return text
+		}
+	}
+	return ""
 }
 
 // extractReasoningParts extracts reasoning/thought content from provider-specific payloads.

@@ -19,12 +19,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"google.golang.org/adk/agent"
-	"google.golang.org/adk/artifact"
-	"google.golang.org/adk/memory"
-	"google.golang.org/adk/runner"
-	"google.golang.org/adk/server/adkrest/internal/models"
-	"google.golang.org/adk/session"
+	"github.com/jiatianzhao/adk-go-openai/agent"
+	"github.com/jiatianzhao/adk-go-openai/artifact"
+	"github.com/jiatianzhao/adk-go-openai/memory"
+	"github.com/jiatianzhao/adk-go-openai/runner"
+	"github.com/jiatianzhao/adk-go-openai/server/adkrest/internal/models"
+	"github.com/jiatianzhao/adk-go-openai/session"
 )
 
 const pubSubDefaultUserID = "pubsub-caller"

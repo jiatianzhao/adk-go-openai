@@ -27,13 +27,13 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"google.golang.org/adk/agent"
+	"github.com/jiatianzhao/adk-go-openai/agent"
 
-	"google.golang.org/adk/runner"
-	"google.golang.org/adk/server/adkrest/controllers/triggers"
-	"google.golang.org/adk/server/adkrest/internal/fakes"
-	"google.golang.org/adk/server/adkrest/internal/models"
-	"google.golang.org/adk/session"
+	"github.com/jiatianzhao/adk-go-openai/runner"
+	"github.com/jiatianzhao/adk-go-openai/server/adkrest/controllers/triggers"
+	"github.com/jiatianzhao/adk-go-openai/server/adkrest/internal/fakes"
+	"github.com/jiatianzhao/adk-go-openai/server/adkrest/internal/models"
+	"github.com/jiatianzhao/adk-go-openai/session"
 )
 
 var defaultTriggerConfig = triggers.TriggerConfig{
