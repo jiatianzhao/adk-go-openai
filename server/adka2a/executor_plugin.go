@@ -15,29 +15,17 @@
 package adka2a
 
 import (
-	"slices"
-
 	"google.golang.org/genai"
 
-	"github.com/jiatianzhao/adk-go-openai/agent"
-	"github.com/jiatianzhao/adk-go-openai/plugin"
-	"github.com/jiatianzhao/adk-go-openai/runner"
-	"github.com/jiatianzhao/adk-go-openai/session"
+	"google.golang.org/adk/agent"
+	"google.golang.org/adk/plugin"
+	"google.golang.org/adk/session"
 )
 
 type executorPlugin struct {
 	plugin *plugin.Plugin
 
 	invocationSession session.Session
-}
-
-func withExecutorPlugin(cfg runner.Config) (runner.Config, *executorPlugin, error) {
-	executorPlugin, err := newExecutorPlugin()
-	if err != nil {
-		return cfg, nil, err
-	}
-	cfg.PluginConfig.Plugins = append(slices.Clone(cfg.PluginConfig.Plugins), executorPlugin.plugin)
-	return cfg, executorPlugin, nil
 }
 
 func newExecutorPlugin() (*executorPlugin, error) {
